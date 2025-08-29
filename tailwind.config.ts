@@ -61,7 +61,42 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Worm Daycare theme colors
+				worm: {
+					DEFAULT: 'hsl(var(--worm))',
+					foreground: 'hsl(var(--worm-foreground))'
+				},
+				'nature-green': {
+					DEFAULT: 'hsl(var(--nature-green))',
+					foreground: 'hsl(var(--nature-green-foreground))'
+				},
+				'leaf-green': {
+					DEFAULT: 'hsl(var(--leaf-green))',
+					foreground: 'hsl(var(--leaf-green-foreground))'
+				},
+				energy: {
+					DEFAULT: 'hsl(var(--energy))',
+					foreground: 'hsl(var(--energy-foreground))'
+				},
+				health: {
+					DEFAULT: 'hsl(var(--health))',
+					foreground: 'hsl(var(--health-foreground))'
 				}
+			},
+			backgroundImage: {
+				'gradient-soil': 'var(--gradient-soil)',
+				'gradient-worm': 'var(--gradient-worm)',
+				'gradient-nature': 'var(--gradient-nature)'
+			},
+			boxShadow: {
+				'soft': 'var(--shadow-soft)',
+				'worm': 'var(--shadow-worm)',
+				'nature': 'var(--shadow-nature)'
+			},
+			transitionTimingFunction: {
+				'smooth': 'var(--transition-smooth)',
+				'bounce': 'var(--transition-bounce)'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -84,11 +119,26 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'worm-wiggle': {
+					'0%, 100%': { transform: 'rotate(-3deg)' },
+					'50%': { transform: 'rotate(3deg)' }
+				},
+				'bounce-gentle': {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-5px)' }
+				},
+				'pulse-glow': {
+					'0%, 100%': { boxShadow: '0 0 20px hsl(var(--worm) / 0.4)' },
+					'50%': { boxShadow: '0 0 30px hsl(var(--worm) / 0.8)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'worm-wiggle': 'worm-wiggle 2s ease-in-out infinite',
+				'bounce-gentle': 'bounce-gentle 3s ease-in-out infinite',
+				'pulse-glow': 'pulse-glow 2s ease-in-out infinite'
 			}
 		}
 	},
