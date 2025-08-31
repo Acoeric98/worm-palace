@@ -65,6 +65,40 @@ export const useGameData = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
   }, [gameState]);
 
+  // Energy regeneration system
+  useEffect(() => {
+    if (!gameState.worm) return;
+
+    const interval = setInterval(() => {
+      setGameState(prev => {
+        if (!prev.worm || prev.worm.energy >= 100) return prev;
+
+        const timeSinceLastUpdate = Date.now() - prev.worm.lastUpdated;
+        const minutesSinceUpdate = timeSinceLastUpdate / (1000 * 60);
+        
+        // Regenerate 1 energy per minute
+        const energyToRestore = Math.floor(minutesSinceUpdate);
+        
+        if (energyToRestore > 0) {
+          const newEnergy = Math.min(100, prev.worm.energy + energyToRestore);
+          
+          return {
+            ...prev,
+            worm: {
+              ...prev.worm,
+              energy: newEnergy,
+              lastUpdated: Date.now()
+            }
+          };
+        }
+        
+        return prev;
+      });
+    }, 60000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, [gameState.worm?.id]);
+
   // Create new user and worm
   const createUserAndWorm = (username: string, wormName: string) => {
     const user = createInitialUser(username);
