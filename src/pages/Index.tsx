@@ -5,6 +5,7 @@ import { Dashboard } from '../components/Dashboard';
 import { TrainingRoom } from '../components/TrainingRoom';
 import { JobBoard } from '../components/JobBoard';
 import { SetupForm } from '../components/SetupForm';
+import { ProfileEditor } from '../components/ProfileEditor';
 
 type Page = 'dashboard' | 'training' | 'jobs' | 'profile';
 
@@ -27,7 +28,7 @@ const Index = () => {
     return <SetupForm onCreateWorm={createUserAndWorm} />;
   }
 
-  const { worm, trainings, jobs, jobAssignments } = gameState;
+  const { user, worm, trainings, jobs, jobAssignments } = gameState;
   
   if (!worm) {
     return <SetupForm onCreateWorm={createUserAndWorm} />;
@@ -70,18 +71,11 @@ const Index = () => {
       
       case 'profile':
         return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-3xl font-bold text-primary mb-2">👤 Profil Szerkesztése</h2>
-              <p className="text-muted-foreground">
-                Itt szerkesztheted a kukacod részleteit
-              </p>
-            </div>
-            {/* Profile editing will be implemented here */}
-            <div className="text-center text-muted-foreground">
-              Profil szerkesztés hamarosan elérhető!
-            </div>
-          </div>
+          <ProfileEditor 
+            user={user!}
+            worm={worm}
+            onUpdateProfile={updateWormProfile}
+          />
         );
       
       default:
