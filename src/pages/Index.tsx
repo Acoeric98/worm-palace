@@ -6,8 +6,10 @@ import { TrainingRoom } from '../components/TrainingRoom';
 import { JobBoard } from '../components/JobBoard';
 import { SetupForm } from '../components/SetupForm';
 import { ProfileEditor } from '../components/ProfileEditor';
+import { Shop } from '../components/Shop';
+import { Inventory } from '../components/Inventory';
 
-type Page = 'dashboard' | 'training' | 'jobs' | 'profile';
+type Page = 'dashboard' | 'training' | 'jobs' | 'profile' | 'shop' | 'inventory';
 
 const Index = () => {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
@@ -20,6 +22,11 @@ const Index = () => {
     updateWormProfile,
     isTrainingAvailable,
     getTrainingCooldown,
+    buyItem,
+    useItem,
+    equipItem,
+    unequipItem,
+    getTotalStats,
     isLoggedIn
   } = useGameData();
 
@@ -28,7 +35,7 @@ const Index = () => {
     return <SetupForm onCreateWorm={createUserAndWorm} />;
   }
 
-  const { user, worm, trainings, jobs, jobAssignments } = gameState;
+  const { user, worm, trainings, jobs, jobAssignments, inventory, shopItems } = gameState;
   
   if (!worm) {
     return <SetupForm onCreateWorm={createUserAndWorm} />;
@@ -75,6 +82,28 @@ const Index = () => {
             user={user!}
             worm={worm}
             onUpdateProfile={updateWormProfile}
+          />
+        );
+      
+      case 'shop':
+        return (
+          <Shop 
+            items={shopItems}
+            worm={worm}
+            onBuyItem={buyItem}
+          />
+        );
+      
+      case 'inventory':
+        return (
+          <Inventory 
+            inventory={inventory}
+            items={shopItems}
+            worm={worm}
+            onUseItem={useItem}
+            onEquipItem={equipItem}
+            onUnequipItem={unequipItem}
+            getTotalStats={getTotalStats}
           />
         );
       

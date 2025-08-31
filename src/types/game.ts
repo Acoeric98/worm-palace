@@ -19,6 +19,14 @@ export interface Worm {
   // Appearance
   avatarUrl?: string;
   
+  // Equipment slots
+  equipment: {
+    helmet?: string; // item id
+    armor?: string;
+    weapon?: string;
+    accessory?: string;
+  };
+  
   // Training cooldowns (training_id -> timestamp when available again)
   cooldowns: Record<string, number>;
   
@@ -77,6 +85,50 @@ export interface JobAssignment {
   rewardClaimed?: boolean;
 }
 
+export interface Item {
+  id: string;
+  name: string;
+  nameHu: string;
+  description: string;
+  descriptionHu: string;
+  type: 'consumable' | 'equipment';
+  subType?: 'helmet' | 'armor' | 'weapon' | 'accessory' | 'energy' | 'stat_boost';
+  price: number;
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  icon: string;
+  
+  // Effects for consumables
+  effects?: {
+    energy?: number;
+    health?: number;
+    mood?: number;
+    strength?: number;
+    agility?: number;
+    endurance?: number;
+    stamina?: number;
+    intelligence?: number;
+    charisma?: number;
+  };
+  
+  // Stats for equipment
+  statBonus?: {
+    strength?: number;
+    agility?: number;
+    endurance?: number;
+    stamina?: number;
+    intelligence?: number;
+    charisma?: number;
+  };
+  
+  level?: number; // minimum level to use
+}
+
+export interface InventoryItem {
+  itemId: string;
+  quantity: number;
+  acquiredAt: number;
+}
+
 export interface GameState {
   user: User | null;
   worm: Worm | null;
@@ -84,6 +136,8 @@ export interface GameState {
   jobs: Job[];
   jobAssignments: JobAssignment[];
   dailyJobsCompleted: number;
+  inventory: InventoryItem[];
+  shopItems: Item[];
   leaderboard: Array<{
     rank: number;
     username: string;

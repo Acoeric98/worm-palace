@@ -2,8 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 interface NavigationProps {
-  currentPage: 'dashboard' | 'training' | 'jobs' | 'profile';
-  onNavigate: (page: 'dashboard' | 'training' | 'jobs' | 'profile') => void;
+  currentPage: 'dashboard' | 'training' | 'jobs' | 'profile' | 'shop' | 'inventory';
+  onNavigate: (page: 'dashboard' | 'training' | 'jobs' | 'profile' | 'shop' | 'inventory') => void;
   coins: number;
 }
 
@@ -12,6 +12,8 @@ export const Navigation = ({ currentPage, onNavigate, coins }: NavigationProps) 
     { id: 'dashboard', label: 'Vezérlőpult', icon: '🏠' },
     { id: 'training', label: 'Tréning Terem', icon: '💪' },
     { id: 'jobs', label: 'Munka Közvetítő', icon: '💼' },
+    { id: 'shop', label: 'Bolt', icon: '🏪' },
+    { id: 'inventory', label: 'Táska', icon: '🎒' },
     { id: 'profile', label: 'Profil', icon: '👤' }
   ] as const;
 
