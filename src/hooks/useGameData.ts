@@ -9,6 +9,7 @@ import { useToast } from './use-toast';
 import defaultWormImage from '../assets/default-worm.png';
 
 const STORAGE_KEY = 'worm-daycare-data';
+const API_URL = 'http://localhost:3001';
 
 // Generate random worm stats for new worms
 const generateRandomStats = () => ({
@@ -134,21 +135,51 @@ export const useGameData = () => {
     return () => clearInterval(interval);
   }, [gameState.worm?.id]);
 
-  // Create new user and worm
-  const createUserAndWorm = (username: string, wormName: string, playerClass: PlayerClass) => {
+  const registerUser = async (
+    username: string,
+    password: string,
+    wormName: string,
+    playerClass: PlayerClass
+  ) => {
     const user = createInitialUser(username);
     const worm = createInitialWorm(wormName, playerClass);
-    
-    setGameState(prev => ({
-      ...prev,
+
+    const newState: GameState = {
+      ...defaultGameState,
       user: { ...user, wormId: worm.id },
       worm
-    }));
-    
+    };
+
+    setGameState(newState);
+
+    await fetch(`${API_URL}/api/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, data: newState })
+    });
+
     toast({
       title: "Üdvözöllek!",
       description: `${wormName} kukac sikeresen létrehozva!`
     });
+  };
+
+  const loginUser = async (username: string, password: string) => {
+    const res = await fetch(`${API_URL}/api/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setGameState({ ...defaultGameState, ...data });
+    } else {
+      toast({
+        title: 'Hiba',
+        description: 'Érvénytelen belépési adatok',
+        variant: 'destructive'
+      });
+    }
   };
 
   // Check if training is available (not on cooldown)
@@ -964,7 +995,8 @@ export const useGameData = () => {
 
   return {
     gameState,
-    createUserAndWorm,
+    registerUser,
+    loginUser,
     executeTrain,
     acceptJob,
     completeJob,
