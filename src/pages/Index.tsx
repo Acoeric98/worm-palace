@@ -8,8 +8,11 @@ import { SetupForm } from '../components/SetupForm';
 import { ProfileEditor } from '../components/ProfileEditor';
 import { Shop } from '../components/Shop';
 import { Inventory } from '../components/Inventory';
+import { TourRoom } from '../components/TourRoom';
+import { UndergroundBox } from '../components/UndergroundBox';
+import { PveArena } from '../components/PveArena';
 
-type Page = 'dashboard' | 'training' | 'jobs' | 'profile' | 'shop' | 'inventory';
+type Page = 'dashboard' | 'training' | 'jobs' | 'profile' | 'shop' | 'inventory' | 'tours' | 'pvp' | 'pve';
 
 const Index = () => {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
@@ -35,7 +38,7 @@ const Index = () => {
     return <SetupForm onCreateWorm={createUserAndWorm} />;
   }
 
-  const { user, worm, trainings, jobs, jobAssignments, inventory, shopItems } = gameState;
+  const { user, worm, trainings, jobs, jobAssignments, inventory, shopItems, tourResults, battles, players, abilities } = gameState;
   
   if (!worm) {
     return <SetupForm onCreateWorm={createUserAndWorm} />;
@@ -104,6 +107,39 @@ const Index = () => {
             onEquipItem={equipItem}
             onUnequipItem={unequipItem}
             getTotalStats={getTotalStats}
+          />
+        );
+      
+      case 'tours':
+        return (
+          <TourRoom 
+            tours={tourResults}
+            worm={worm}
+            onStartTour={() => {}}
+            isTourAvailable={() => true}
+            getTourCooldown={() => 0}
+          />
+        );
+      
+      case 'pvp':
+        return (
+          <UndergroundBox 
+            worm={worm}
+            players={players}
+            battles={battles}
+            onChallengeRandom={() => {}}
+            onChallengePlayer={() => {}}
+            onAcceptBattle={() => {}}
+          />
+        );
+      
+      case 'pve':
+        return (
+          <PveArena 
+            worm={worm}
+            onStartDungeon={() => {}}
+            onStartRaid={() => {}}
+            onStartAdventure={() => {}}
           />
         );
       

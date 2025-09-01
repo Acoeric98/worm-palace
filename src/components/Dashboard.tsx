@@ -21,7 +21,7 @@ export const Dashboard = ({ worm, assignments, jobs, onNavigate, onCompleteJob }
     return elapsed >= required;
   });
 
-  const totalStats = worm.strength + worm.agility + worm.endurance + 
+  const totalStats = worm.strength + worm.dexterity + worm.endurance + 
                     worm.stamina + worm.intelligence + worm.charisma;
 
   return (

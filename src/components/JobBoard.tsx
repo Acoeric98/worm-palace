@@ -52,7 +52,7 @@ export const JobBoard = ({ jobs, assignments, worm, onAcceptJob, onCompleteJob }
     
     // Check stat requirements
     for (const [stat, required] of Object.entries(job.statRequirements)) {
-      const statValue = worm[stat as keyof Pick<Worm, 'strength' | 'agility' | 'endurance' | 'stamina' | 'intelligence' | 'charisma'>] as number;
+      const statValue = worm[stat as keyof Pick<Worm, 'strength' | 'dexterity' | 'endurance' | 'stamina' | 'intelligence' | 'charisma'>] as number;
       if (statValue < (required as number)) return false;
     }
     
@@ -200,9 +200,9 @@ export const JobBoard = ({ jobs, assignments, worm, onAcceptJob, onCompleteJob }
                       <div className="text-xs font-semibold text-muted-foreground">Követelmények:</div>
                       <div className="flex flex-wrap gap-1">
                         {Object.entries(job.statRequirements).map(([stat, required]) => {
-                          const statValue = worm[stat as keyof Pick<Worm, 'strength' | 'agility' | 'endurance' | 'stamina' | 'intelligence' | 'charisma'>] as number;
+                          const statValue = worm[stat as keyof Pick<Worm, 'strength' | 'dexterity' | 'endurance' | 'stamina' | 'intelligence' | 'charisma'>] as number;
                           const statName = stat === 'strength' ? 'Erő' :
-                            stat === 'agility' ? 'Ügyesség' :
+                            stat === 'dexterity' ? 'Ügyesség' :
                             stat === 'endurance' ? 'Kitartás' :
                             stat === 'stamina' ? 'Állóképesség' :
                             stat === 'intelligence' ? 'Intelligencia' : 'Karizma';

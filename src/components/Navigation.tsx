@@ -2,16 +2,19 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 interface NavigationProps {
-  currentPage: 'dashboard' | 'training' | 'jobs' | 'profile' | 'shop' | 'inventory';
-  onNavigate: (page: 'dashboard' | 'training' | 'jobs' | 'profile' | 'shop' | 'inventory') => void;
+  currentPage: 'dashboard' | 'training' | 'jobs' | 'profile' | 'shop' | 'inventory' | 'tours' | 'pvp' | 'pve';
+  onNavigate: (page: 'dashboard' | 'training' | 'jobs' | 'profile' | 'shop' | 'inventory' | 'tours' | 'pvp' | 'pve') => void;
   coins: number;
 }
 
 export const Navigation = ({ currentPage, onNavigate, coins }: NavigationProps) => {
   const navItems = [
     { id: 'dashboard', label: 'Vezérlőpult', icon: '🏠' },
-    { id: 'training', label: 'Tréning Terem', icon: '💪' },
-    { id: 'jobs', label: 'Munka Közvetítő', icon: '💼' },
+    { id: 'training', label: 'Tréning', icon: '💪' },
+    { id: 'jobs', label: 'Munkák', icon: '💼' },
+    { id: 'tours', label: 'Felfedezés', icon: '🗺️' },
+    { id: 'pvp', label: 'PvP', icon: '⚔️' },
+    { id: 'pve', label: 'PvE', icon: '🐉' },
     { id: 'shop', label: 'Bolt', icon: '🏪' },
     { id: 'inventory', label: 'Táska', icon: '🎒' },
     { id: 'profile', label: 'Profil', icon: '👤' }

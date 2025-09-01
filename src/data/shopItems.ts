@@ -110,7 +110,7 @@ export const defaultShopItems: Item[] = [
     rarity: 'rare',
     icon: '👢',
     statBonus: {
-      agility: 3
+      dexterity: 3
     },
     level: 4
   },

@@ -27,8 +27,8 @@ export const defaultJobs: Job[] = [
     energyCost: 15,
     rewardCoins: 20,
     rewardXp: 12,
-    statRequirements: { agility: 3, stamina: 5 },
-    statFocus: 'agility',
+    statRequirements: { dexterity: 3, stamina: 5 },
+    statFocus: 'dexterity',
     icon: '🍂'
   },
   {
@@ -72,7 +72,7 @@ export const defaultJobs: Job[] = [
     energyCost: 30,
     rewardCoins: 60,
     rewardXp: 40,
-    statRequirements: { strength: 12, agility: 10, charisma: 8 },
+    statRequirements: { strength: 12, dexterity: 10, charisma: 8 },
     statFocus: 'strength',
     icon: '🛡️'
   },

@@ -48,62 +48,64 @@ export const SetupForm = ({ onCreateWorm }: SetupFormProps) => {
         
         <CardContent className="space-y-6">
           {step === 'profile' ? (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">A te neved</Label>
-              <Input
-                id="username"
-                type="text"
-                placeholder="Add meg a nevedet..."
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="transition-smooth"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="wormName">Kukac neve</Label>
-              <Input
-                id="wormName"
-                type="text"
-                placeholder="Nevezd el a kukacod..."
-                value={wormName}
-                onChange={(e) => setWormName(e.target.value)}
-                className="transition-smooth"
-              />
-              <div className="flex flex-wrap gap-1 mt-2">
-                <span className="text-xs text-muted-foreground">Ötletek:</span>
-                {wormNameSuggestions.map(name => (
-                  <Button
-                    key={name}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="text-xs h-6"
-                    onClick={() => setWormName(name)}
-                  >
-                    {name}
-                  </Button>
-                ))}
+            <>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="username">A te neved</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="Add meg a nevedet..."
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="transition-smooth"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="wormName">Kukac neve</Label>
+                  <Input
+                    id="wormName"
+                    type="text"
+                    placeholder="Nevezd el a kukacod..."
+                    value={wormName}
+                    onChange={(e) => setWormName(e.target.value)}
+                    className="transition-smooth"
+                  />
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    <span className="text-xs text-muted-foreground">Ötletek:</span>
+                    {wormNameSuggestions.map(name => (
+                      <Button
+                        key={name}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-xs h-6"
+                        onClick={() => setWormName(name)}
+                      >
+                        {name}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full text-lg py-6 transition-bounce bg-gradient-worm hover:shadow-worm"
+                  disabled={!username.trim() || !wormName.trim()}
+                >
+                  🎉 Következő: Osztály Választás
+                </Button>
+              </form>
+              
+              <div className="text-center text-sm text-muted-foreground">
+                <p>
+                  🎮 Növeld a kukacod statjait tréninggel<br/>
+                  💼 Végezz munkákat érmékért<br/>
+                  🏆 Versenyzz a ranglistán
+                </p>
               </div>
-            </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full text-lg py-6 transition-bounce bg-gradient-worm hover:shadow-worm"
-              disabled={!username.trim() || !wormName.trim()}
-            >
-              🎉 Kukac létrehozása
-            </Button>
-          </form>
-          
-          <div className="text-center text-sm text-muted-foreground">
-            <p>
-              🎮 Növeld a kukacod statjait tréninggel<br/>
-              💼 Végezz munkákat érmékért<br/>
-              🏆 Versenyzz a ranglistán
-            </p>
-          </div>
+            </>
           ) : (
             <ClassSelector 
               selectedClass={selectedClass}

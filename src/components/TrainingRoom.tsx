@@ -103,7 +103,7 @@ export const TrainingRoom = ({
                     <span>📈</span>
                     <span>+{Math.floor(training.statGain * multiplier)} {
                       training.statFocus === 'strength' ? 'Erő' :
-                      training.statFocus === 'agility' ? 'Ügyesség' :
+                      training.statFocus === 'dexterity' ? 'Ügyesség' :
                       training.statFocus === 'endurance' ? 'Kitartás' :
                       training.statFocus === 'stamina' ? 'Állóképesség' :
                       training.statFocus === 'intelligence' ? 'Intelligencia' :

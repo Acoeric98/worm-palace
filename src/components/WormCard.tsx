@@ -13,7 +13,7 @@ export const WormCard = ({ worm, showDetailed = false }: WormCardProps) => {
 
   const stats = [
     { name: 'Erő', nameEn: 'strength', value: worm.strength, icon: '💪', color: 'text-red-600' },
-    { name: 'Ügyesség', nameEn: 'agility', value: worm.agility, icon: '🤸', color: 'text-blue-600' },
+    { name: 'Ügyesség', nameEn: 'dexterity', value: worm.dexterity, icon: '🤸', color: 'text-blue-600' },
     { name: 'Kitartás', nameEn: 'endurance', value: worm.endurance, icon: '🛡️', color: 'text-green-600' },
     { name: 'Állóképesség', nameEn: 'stamina', value: worm.stamina, icon: '🏃', color: 'text-yellow-600' },
     { name: 'Intelligencia', nameEn: 'intelligence', value: worm.intelligence, icon: '🧠', color: 'text-purple-600' },
