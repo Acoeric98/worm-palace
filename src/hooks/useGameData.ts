@@ -4,9 +4,8 @@ import { defaultTrainings } from '../data/trainings';
 import { defaultJobs } from '../data/jobs';
 import { defaultShopItems } from '../data/shopItems';
 import { useToast } from './use-toast';
+import { useAuth } from './useAuth';
 import defaultWormImage from '../assets/default-worm.png';
-
-const STORAGE_KEY = 'worm-daycare-data';
 
 // Generate random worm stats for new worms
 const generateRandomStats = () => ({
@@ -52,8 +51,24 @@ const createInitialUser = (username: string): User => ({
 });
 
 export const useGameData = () => {
+  const { user: authUser, isAuthenticated } = useAuth();
   const [gameState, setGameState] = useState<GameState>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!authUser) {
+      return {
+        user: null,
+        worm: null,
+        trainings: defaultTrainings,
+        jobs: defaultJobs,
+        jobAssignments: [],
+        dailyJobsCompleted: 0,
+        inventory: [],
+        shopItems: defaultShopItems,
+        leaderboard: []
+      };
+    }
+
+    const userStorageKey = `worm-daycare-data-${authUser.id}`;
+    const stored = localStorage.getItem(userStorageKey);
     return stored ? JSON.parse(stored) : {
       user: null,
       worm: null,
@@ -69,10 +84,37 @@ export const useGameData = () => {
 
   const { toast } = useToast();
 
+  // Load user-specific data when auth user changes
+  useEffect(() => {
+    if (!authUser) {
+      setGameState({
+        user: null,
+        worm: null,
+        trainings: defaultTrainings,
+        jobs: defaultJobs,
+        jobAssignments: [],
+        dailyJobsCompleted: 0,
+        inventory: [],
+        shopItems: defaultShopItems,
+        leaderboard: []
+      });
+      return;
+    }
+
+    const userStorageKey = `worm-daycare-data-${authUser.id}`;
+    const stored = localStorage.getItem(userStorageKey);
+    if (stored) {
+      setGameState(JSON.parse(stored));
+    }
+  }, [authUser]);
+
   // Save to localStorage whenever gameState changes
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
-  }, [gameState]);
+    if (authUser) {
+      const userStorageKey = `worm-daycare-data-${authUser.id}`;
+      localStorage.setItem(userStorageKey, JSON.stringify(gameState));
+    }
+  }, [gameState, authUser]);
 
   // Energy regeneration system
   useEffect(() => {
@@ -625,6 +667,7 @@ export const useGameData = () => {
     equipItem,
     unequipItem,
     getTotalStats,
-    isLoggedIn: !!gameState.user && !!gameState.worm
+    isLoggedIn: !!gameState.user && !!gameState.worm,
+    isAuthenticated
   };
 };
