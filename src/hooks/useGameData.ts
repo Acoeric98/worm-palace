@@ -9,7 +9,8 @@ import { useToast } from './use-toast';
 import defaultWormImage from '../assets/default-worm.png';
 
 const STORAGE_KEY = 'worm-daycare-data';
-const API_URL = '';
+// Base URL of the authentication API. Can be overridden with VITE_API_URL.
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 // Generate random worm stats for new worms
 const generateRandomStats = () => ({
