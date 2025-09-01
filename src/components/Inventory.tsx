@@ -15,7 +15,7 @@ interface InventoryProps {
   onUnequipItem: (slot: keyof Worm['equipment']) => void;
   getTotalStats: (worm: Worm) => {
     strength: number;
-    agility: number; 
+    dexterity: number; 
     endurance: number;
     stamina: number;
     intelligence: number;
@@ -163,7 +163,7 @@ export const Inventory = ({
                                   {Object.entries(item.statBonus).map(([stat, value]) => (
                                     <span key={stat} className="mr-2">
                                       +{value} {stat === 'strength' ? 'Erő' : 
-                                        stat === 'agility' ? 'Ügy.' : 
+                                        stat === 'dexterity' ? 'Ügy.' : 
                                         stat === 'endurance' ? 'Kit.' : 
                                         stat === 'stamina' ? 'Áll.' : 
                                         stat === 'intelligence' ? 'Int.' : 'Kar.'}
@@ -236,7 +236,7 @@ export const Inventory = ({
                                       effect === 'health' ? 'Egészség' : 
                                       effect === 'mood' ? 'Hangulat' :
                                       effect === 'strength' ? 'Erő' : 
-                                      effect === 'agility' ? 'Ügyesség' : 
+                                      effect === 'dexterity' ? 'Ügyesség' : 
                                       effect === 'endurance' ? 'Kitartás' : 
                                       effect === 'stamina' ? 'Állóképesség' : 
                                       effect === 'intelligence' ? 'Intelligencia' : 'Karizma'}:</span>
@@ -279,7 +279,7 @@ export const Inventory = ({
                 </div>
                 <div className="flex justify-between">
                   <span>Ügyesség:</span>
-                  <span className="font-medium">{worm.agility}</span>
+                  <span className="font-medium">{worm.dexterity}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Kitartás:</span>
@@ -319,10 +319,10 @@ export const Inventory = ({
                 <div className="flex justify-between">
                   <span>Ügyesség:</span>
                   <span className="font-medium text-green-600">
-                    {totalStats.agility}
-                    {totalStats.agility !== worm.agility && (
+                    {totalStats.dexterity}
+                    {totalStats.dexterity !== worm.dexterity && (
                       <span className="text-xs text-muted-foreground ml-1">
-                        (+{totalStats.agility - worm.agility})
+                        (+{totalStats.dexterity - worm.dexterity})
                       </span>
                     )}
                   </span>

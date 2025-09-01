@@ -3,19 +3,29 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PlayerClass } from '../types/game';
+import { ClassSelector } from './ClassSelector';
 
 interface SetupFormProps {
-  onCreateWorm: (username: string, wormName: string) => void;
+  onCreateWorm: (username: string, wormName: string, playerClass: PlayerClass) => void;
 }
 
 export const SetupForm = ({ onCreateWorm }: SetupFormProps) => {
   const [username, setUsername] = useState('');
   const [wormName, setWormName] = useState('');
+  const [selectedClass, setSelectedClass] = useState<PlayerClass | null>(null);
+  const [step, setStep] = useState<'profile' | 'class'>('profile');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (username.trim() && wormName.trim()) {
-      onCreateWorm(username.trim(), wormName.trim());
+      setStep('class');
+    }
+  };
+
+  const handleClassConfirm = () => {
+    if (selectedClass) {
+      onCreateWorm(username.trim(), wormName.trim(), selectedClass);
     }
   };
 
@@ -37,6 +47,7 @@ export const SetupForm = ({ onCreateWorm }: SetupFormProps) => {
         </CardHeader>
         
         <CardContent className="space-y-6">
+          {step === 'profile' ? (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="username">A te neved</Label>
@@ -93,6 +104,13 @@ export const SetupForm = ({ onCreateWorm }: SetupFormProps) => {
               🏆 Versenyzz a ranglistán
             </p>
           </div>
+          ) : (
+            <ClassSelector 
+              selectedClass={selectedClass}
+              onSelectClass={setSelectedClass}
+              onConfirm={handleClassConfirm}
+            />
+          )}
         </CardContent>
       </Card>
     </div>

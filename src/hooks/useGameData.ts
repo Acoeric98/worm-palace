@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { GameState, Worm, User, Training, Job, JobAssignment, Item, InventoryItem, getXpRequiredForLevel, getDiminishingMultiplier, DAILY_JOB_LIMIT } from '../types/game';
+import { GameState, Worm, User, Training, Job, JobAssignment, Item, InventoryItem, getXpRequiredForLevel, getDiminishingMultiplier, DAILY_JOB_LIMIT, TourResult, Battle, PlayerClass } from '../types/game';
 import { defaultTrainings } from '../data/trainings';
 import { defaultJobs } from '../data/jobs';
 import { defaultShopItems } from '../data/shopItems';
+import { defaultTours } from '../data/tours';
+import { defaultAbilities } from '../data/abilities';
 import { useToast } from './use-toast';
 import defaultWormImage from '../assets/default-worm.png';
 
@@ -11,14 +13,14 @@ const STORAGE_KEY = 'worm-daycare-data';
 // Generate random worm stats for new worms
 const generateRandomStats = () => ({
   strength: Math.floor(Math.random() * 5) + 3,
-  agility: Math.floor(Math.random() * 5) + 3,
+  dexterity: Math.floor(Math.random() * 5) + 3,
   endurance: Math.floor(Math.random() * 5) + 3,
   stamina: Math.floor(Math.random() * 5) + 3,
   intelligence: Math.floor(Math.random() * 5) + 3,
   charisma: Math.floor(Math.random() * 5) + 3,
 });
 
-const createInitialWorm = (name: string): Worm => {
+const createInitialWorm = (name: string, playerClass: PlayerClass): Worm => {
   const stats = generateRandomStats();
   return {
     id: Date.now().toString(),
@@ -29,6 +31,10 @@ const createInitialWorm = (name: string): Worm => {
     energy: 100,
     mood: 100,
     health: 100,
+    class: playerClass,
+    rank: 1000,
+    wins: 0,
+    losses: 0,
     ...stats,
     avatarUrl: defaultWormImage,
     equipment: {
@@ -39,6 +45,7 @@ const createInitialWorm = (name: string): Worm => {
     },
     cooldowns: {},
     dailyCounters: {},
+    tourCooldowns: {},
     createdAt: Date.now(),
     lastUpdated: Date.now()
   };
@@ -63,6 +70,10 @@ export const useGameData = () => {
       dailyJobsCompleted: 0,
       inventory: [],
       shopItems: defaultShopItems,
+      tourResults: defaultTours,
+      battles: [],
+      abilities: defaultAbilities,
+      players: [],
       leaderboard: []
     };
   });
@@ -109,9 +120,9 @@ export const useGameData = () => {
   }, [gameState.worm?.id]);
 
   // Create new user and worm
-  const createUserAndWorm = (username: string, wormName: string) => {
+  const createUserAndWorm = (username: string, wormName: string, playerClass: PlayerClass) => {
     const user = createInitialUser(username);
-    const worm = createInitialWorm(wormName);
+    const worm = createInitialWorm(wormName, playerClass);
     
     setGameState(prev => ({
       ...prev,
@@ -225,7 +236,7 @@ export const useGameData = () => {
     toast({
       title: "Edzés befejezve!",
       description: `+${actualStatGain} ${training.statFocus === 'strength' ? 'Erő' : 
-        training.statFocus === 'agility' ? 'Ügyesség' : 
+        training.statFocus === 'dexterity' ? 'Ügyesség' : 
         training.statFocus === 'endurance' ? 'Kitartás' : 
         training.statFocus === 'stamina' ? 'Állóképesség' : 
         training.statFocus === 'intelligence' ? 'Intelligencia' : 'Karizma'}, +${actualXpGain} XP`
@@ -276,10 +287,10 @@ export const useGameData = () => {
 
     // Check stat requirements
     for (const [stat, required] of Object.entries(job.statRequirements)) {
-      const statValue = worm[stat as keyof Pick<Worm, 'strength' | 'agility' | 'endurance' | 'stamina' | 'intelligence' | 'charisma'>] as number;
+      const statValue = worm[stat as keyof Pick<Worm, 'strength' | 'dexterity' | 'endurance' | 'stamina' | 'intelligence' | 'charisma'>] as number;
       if (statValue < (required as number)) {
         const statName = stat === 'strength' ? 'Erő' : 
-          stat === 'agility' ? 'Ügyesség' : 
+          stat === 'dexterity' ? 'Ügyesség' : 
           stat === 'endurance' ? 'Kitartás' : 
           stat === 'stamina' ? 'Állóképesség' : 
           stat === 'intelligence' ? 'Intelligencia' : 'Karizma';
@@ -480,7 +491,7 @@ export const useGameData = () => {
       health: Math.min(100, worm.health + (effects.health || 0)),
       mood: Math.min(100, worm.mood + (effects.mood || 0)),
       strength: worm.strength + (effects.strength || 0),
-      agility: worm.agility + (effects.agility || 0),
+      dexterity: worm.dexterity + (effects.dexterity || 0),
       endurance: worm.endurance + (effects.endurance || 0),
       stamina: worm.stamina + (effects.stamina || 0),
       intelligence: worm.intelligence + (effects.intelligence || 0),
@@ -586,7 +597,7 @@ export const useGameData = () => {
   const getTotalStats = (worm: Worm) => {
     let totalStats = {
       strength: worm.strength,
-      agility: worm.agility,
+      dexterity: worm.dexterity,
       endurance: worm.endurance,
       stamina: worm.stamina,
       intelligence: worm.intelligence,
@@ -599,7 +610,7 @@ export const useGameData = () => {
         const item = gameState.shopItems.find(i => i.id === itemId);
         if (item?.statBonus) {
           totalStats.strength += item.statBonus.strength || 0;
-          totalStats.agility += item.statBonus.agility || 0;
+          totalStats.dexterity += item.statBonus.dexterity || 0;
           totalStats.endurance += item.statBonus.endurance || 0;
           totalStats.stamina += item.statBonus.stamina || 0;
           totalStats.intelligence += item.statBonus.intelligence || 0;

@@ -24,7 +24,7 @@ export const defaultTrainings: Training[] = [
     energyCost: 12,
     xpGain: 8,
     cooldownSeconds: 240, // 4 minutes
-    statFocus: 'agility',
+    statFocus: 'dexterity',
     statGain: 2,
     icon: '🍃'
   },
