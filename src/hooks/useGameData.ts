@@ -7,10 +7,9 @@ import { defaultTours } from '../data/tours';
 import { defaultAbilities } from '../data/abilities';
 import { useToast } from './use-toast';
 import defaultWormImage from '../assets/default-worm.png';
+import { registerUser as apiRegisterUser, loginUser as apiLoginUser } from '@/services/auth';
 
 const STORAGE_KEY = 'worm-daycare-data';
-// Base URL of the authentication API. Can be overridden with VITE_API_URL.
-const API_URL = "";
 
 // Generate random worm stats for new worms
 const generateRandomStats = () => ({
@@ -154,16 +153,7 @@ export const useGameData = () => {
     setGameState(newState);
 
     try {
-      const res = await fetch(`${API_URL}/api/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, data: newState })
-      });
-
-      if (!res.ok) {
-        throw new Error('Registration failed');
-      }
-
+      await apiRegisterUser({ username, password, data: newState });
       toast({
         title: "Üdvözöllek!",
         description: `${wormName} kukac sikeresen létrehozva!`
@@ -172,35 +162,22 @@ export const useGameData = () => {
       console.error('Failed to register user', err);
       toast({
         title: 'Hiba',
-        description: 'Nem sikerült csatlakozni a szerverhez.',
+        description: err instanceof Error ? err.message : 'Nem sikerült csatlakozni a szerverhez.',
         variant: 'destructive'
       });
+      throw err;
     }
   };
 
   const loginUser = async (username: string, password: string) => {
     try {
-      const res = await fetch(`${API_URL}/api/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setGameState({ ...defaultGameState, ...data });
-      } else {
-        toast({
-          title: 'Hiba',
-          description: 'Érvénytelen belépési adatok',
-          variant: 'destructive'
-        });
-      }
+      const data = await apiLoginUser<GameState>({ username, password });
+      setGameState({ ...defaultGameState, ...data });
     } catch (err) {
       console.error('Failed to login user', err);
       toast({
         title: 'Hiba',
-        description: 'Nem sikerült csatlakozni a szerverhez.',
+        description: err instanceof Error ? err.message : 'Nem sikerült csatlakozni a szerverhez.',
         variant: 'destructive'
       });
     }

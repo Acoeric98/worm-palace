@@ -8,6 +8,7 @@ interface ClassSelectorProps {
   selectedClass: PlayerClass | null;
   onSelectClass: (playerClass: PlayerClass) => void;
   onConfirm: () => void;
+  loading?: boolean;
 }
 
 const classInfo: Record<PlayerClass, {
@@ -84,7 +85,7 @@ const classInfo: Record<PlayerClass, {
   }
 };
 
-export const ClassSelector = ({ selectedClass, onSelectClass, onConfirm }: ClassSelectorProps) => {
+export const ClassSelector = ({ selectedClass, onSelectClass, onConfirm, loading }: ClassSelectorProps) => {
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -144,8 +145,10 @@ export const ClassSelector = ({ selectedClass, onSelectClass, onConfirm }: Class
 
       {selectedClass && (
         <div className="text-center">
-          <Button onClick={onConfirm} size="lg" className="px-8">
-            {classInfo[selectedClass].icon} {classInfo[selectedClass].nameHu} Választása
+          <Button onClick={onConfirm} size="lg" className="px-8" disabled={loading}>
+            {loading
+              ? 'Regisztrálás...'
+              : `${classInfo[selectedClass].icon} ${classInfo[selectedClass].nameHu} Választása`}
           </Button>
         </div>
       )}
