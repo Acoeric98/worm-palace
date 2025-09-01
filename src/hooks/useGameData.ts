@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { GameState, Worm, User, Training, Job, JobAssignment, Item, InventoryItem, getXpRequiredForLevel, getDiminishingMultiplier, DAILY_JOB_LIMIT, TourResult, Battle, PlayerClass } from '../types/game';
 import { defaultTrainings } from '../data/trainings';
 import { defaultJobs } from '../data/jobs';
-import { defaultShopItems } from '../data/shopItems';
+import { defaultShopItems, generateRandomEquipment } from '../data/shopItems';
 import { defaultTours } from '../data/tours';
 import { defaultAbilities } from '../data/abilities';
 import { useToast } from './use-toast';
@@ -622,6 +622,331 @@ export const useGameData = () => {
     return totalStats;
   };
 
+  // Tour functions
+  const isTourAvailable = (tourId: string): boolean => {
+    if (!gameState.worm) return false;
+    const cooldownTime = gameState.worm.tourCooldowns[tourId] || 0;
+    return Date.now() >= cooldownTime;
+  };
+
+  const getTourCooldown = (tourId: string): number => {
+    if (!gameState.worm) return 0;
+    const cooldownTime = gameState.worm.tourCooldowns[tourId] || 0;
+    const remaining = cooldownTime - Date.now();
+    return Math.max(0, Math.ceil(remaining / 1000));
+  };
+
+  const startTour = (tourId: string): void => {
+    if (!gameState.worm) return;
+
+    const tour = gameState.tourResults.find(t => t.id === tourId);
+    if (!tour) return;
+
+    // Check requirements
+    if (gameState.worm.level < tour.minLevel) {
+      toast({
+        title: "Szint túl alacsony",
+        description: `${tour.minLevel}. szint szükséges ehhez a túrához.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (gameState.worm.energy < tour.energyCost) {
+      toast({
+        title: "Nincs elég energia",
+        description: `${tour.energyCost} energia szükséges.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isTourAvailable(tourId)) {
+      toast({
+        title: "Túra még nem elérhető",
+        description: "Várj még egy kicsit!",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setGameState(prev => {
+      if (!prev.worm) return prev;
+
+      const updatedWorm = {
+        ...prev.worm,
+        energy: prev.worm.energy - tour.energyCost,
+        tourCooldowns: {
+          ...prev.worm.tourCooldowns,
+          [tourId]: Date.now() + (tour.duration * 60 * 1000) // Convert minutes to milliseconds
+        }
+      };
+
+      // Generate random equipment reward (chance based on tier)
+      let rewardItem: Item | null = null;
+      const dropChance = tour.tier === 'low' ? 0.3 : 
+                        tour.tier === 'mid-bottom' ? 0.4 :
+                        tour.tier === 'mid-top' ? 0.5 :
+                        tour.tier === 'high-bottom' ? 0.6 :
+                        tour.tier === 'high-middle' ? 0.7 : 0.8;
+
+      if (Math.random() < dropChance) {
+        rewardItem = generateRandomEquipment(tour.tier);
+      }
+
+      const updatedInventory = rewardItem 
+        ? [...prev.inventory, { itemId: rewardItem.id, quantity: 1, acquiredAt: Date.now() }]
+        : prev.inventory;
+
+      const updatedShopItems = rewardItem 
+        ? [...prev.shopItems, rewardItem]
+        : prev.shopItems;
+
+      toast({
+        title: "Túra elkezdve!",
+        description: rewardItem 
+          ? `Túra elkezdve! ${tour.duration} perc múlva visszatérsz. Találtál egy tárgyat: ${rewardItem.nameHu}!`
+          : `Túra elkezdve! ${tour.duration} perc múlva visszatérsz.`,
+      });
+
+      return {
+        ...prev,
+        worm: updatedWorm,
+        inventory: updatedInventory,
+        shopItems: updatedShopItems
+      };
+    });
+  };
+
+  // PvE functions
+  const startDungeon = (difficulty: 'easy' | 'medium' | 'hard' | 'elite'): void => {
+    if (!gameState.worm) return;
+
+    const dungeonData = {
+      easy: { energyCost: 15, minLevel: 1, tier: 'low' as const, xpReward: 20 },
+      medium: { energyCost: 25, minLevel: 5, tier: 'mid-bottom' as const, xpReward: 40 },
+      hard: { energyCost: 35, minLevel: 10, tier: 'mid-top' as const, xpReward: 60 },
+      elite: { energyCost: 50, minLevel: 15, tier: 'high-bottom' as const, xpReward: 100 }
+    };
+
+    const dungeon = dungeonData[difficulty];
+
+    // Check requirements
+    if (gameState.worm.level < dungeon.minLevel) {
+      toast({
+        title: "Szint túl alacsony",
+        description: `${dungeon.minLevel}. szint szükséges ehhez a börtönhöz.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (gameState.worm.energy < dungeon.energyCost) {
+      toast({
+        title: "Nincs elég energia",
+        description: `${dungeon.energyCost} energia szükséges.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setGameState(prev => {
+      if (!prev.worm) return prev;
+
+      // Generate rewards
+      const xpGained = dungeon.xpReward;
+      const newXp = prev.worm.xp + xpGained;
+      const newLevel = calculateLevel(newXp);
+      const leveledUp = newLevel > prev.worm.level;
+
+      // Equipment drop (higher chance than tours since it's combat)
+      let rewardItem: Item | null = null;
+      const dropChance = difficulty === 'easy' ? 0.4 : 
+                        difficulty === 'medium' ? 0.6 :
+                        difficulty === 'hard' ? 0.75 : 0.9;
+
+      if (Math.random() < dropChance) {
+        rewardItem = generateRandomEquipment(dungeon.tier);
+      }
+
+      const updatedWorm = {
+        ...prev.worm,
+        energy: prev.worm.energy - dungeon.energyCost,
+        xp: newXp,
+        level: newLevel
+      };
+
+      const updatedInventory = rewardItem 
+        ? [...prev.inventory, { itemId: rewardItem.id, quantity: 1, acquiredAt: Date.now() }]
+        : prev.inventory;
+
+      const updatedShopItems = rewardItem 
+        ? [...prev.shopItems, rewardItem]
+        : prev.shopItems;
+
+      toast({
+        title: "Börtön teljesítve!",
+        description: rewardItem 
+          ? `${xpGained} XP szerzett! Találtál: ${rewardItem.nameHu}${leveledUp ? ` Új szint: ${newLevel}!` : ''}`
+          : `${xpGained} XP szerzett!${leveledUp ? ` Új szint: ${newLevel}!` : ''}`,
+      });
+
+      return {
+        ...prev,
+        worm: updatedWorm,
+        inventory: updatedInventory,
+        shopItems: updatedShopItems
+      };
+    });
+  };
+
+  const startRaid = (): void => {
+    if (!gameState.worm) return;
+
+    // Check requirements
+    if (gameState.worm.level < 12) {
+      toast({
+        title: "Szint túl alacsony",
+        description: "12. szint szükséges raid-ekhez.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (gameState.worm.energy < 40) {
+      toast({
+        title: "Nincs elég energia",
+        description: "40 energia szükséges.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setGameState(prev => {
+      if (!prev.worm) return prev;
+
+      // Raid rewards (guaranteed equipment + high XP)
+      const xpGained = 150;
+      const newXp = prev.worm.xp + xpGained;
+      const newLevel = calculateLevel(newXp);
+      const leveledUp = newLevel > prev.worm.level;
+
+      // Always drop equipment from raids, chance for multiple items
+      const rewards: Item[] = [];
+      rewards.push(generateRandomEquipment('high-middle')); // Guaranteed high-tier item
+      
+      // 50% chance for second item
+      if (Math.random() < 0.5) {
+        rewards.push(generateRandomEquipment('high-bottom'));
+      }
+
+      const updatedWorm = {
+        ...prev.worm,
+        energy: prev.worm.energy - 40,
+        xp: newXp,
+        level: newLevel
+      };
+
+      const newInventoryItems = rewards.map(item => ({ 
+        itemId: item.id, 
+        quantity: 1, 
+        acquiredAt: Date.now() 
+      }));
+
+      const updatedInventory = [...prev.inventory, ...newInventoryItems];
+      const updatedShopItems = [...prev.shopItems, ...rewards];
+
+      toast({
+        title: "Sárkány legyőzve!",
+        description: `${xpGained} XP! Zsákmány: ${rewards.map(r => r.nameHu).join(', ')}${leveledUp ? ` Új szint: ${newLevel}!` : ''}`,
+      });
+
+      return {
+        ...prev,
+        worm: updatedWorm,
+        inventory: updatedInventory,
+        shopItems: updatedShopItems
+      };
+    });
+  };
+
+  const startAdventure = (): void => {
+    if (!gameState.worm) return;
+
+    // Check requirements
+    if (gameState.worm.level < 8) {
+      toast({
+        title: "Szint túl alacsony", 
+        description: "8. szint szükséges kalandokhoz.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (gameState.worm.energy < 30) {
+      toast({
+        title: "Nincs elég energia",
+        description: "30 energia szükséges.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setGameState(prev => {
+      if (!prev.worm) return prev;
+
+      // Adventure rewards (moderate XP, good equipment chance)
+      const xpGained = 80;
+      const newXp = prev.worm.xp + xpGained;
+      const newLevel = calculateLevel(newXp);
+      const leveledUp = newLevel > prev.worm.level;
+
+      // 70% chance for equipment
+      let rewardItem: Item | null = null;
+      if (Math.random() < 0.7) {
+        rewardItem = generateRandomEquipment('mid-top');
+      }
+
+      const updatedWorm = {
+        ...prev.worm,
+        energy: prev.worm.energy - 30,
+        xp: newXp,
+        level: newLevel
+      };
+
+      const updatedInventory = rewardItem 
+        ? [...prev.inventory, { itemId: rewardItem.id, quantity: 1, acquiredAt: Date.now() }]
+        : prev.inventory;
+
+      const updatedShopItems = rewardItem 
+        ? [...prev.shopItems, rewardItem]
+        : prev.shopItems;
+
+      toast({
+        title: "Kaland befejezve!",
+        description: rewardItem 
+          ? `${xpGained} XP! Találtál: ${rewardItem.nameHu}${leveledUp ? ` Új szint: ${newLevel}!` : ''}`
+          : `${xpGained} XP szerzett!${leveledUp ? ` Új szint: ${newLevel}!` : ''}`,
+      });
+
+      return {
+        ...prev,
+        worm: updatedWorm,
+        inventory: updatedInventory,
+        shopItems: updatedShopItems
+      };
+    });
+  };
+
+  // Helper function to calculate level from XP
+  const calculateLevel = (xp: number): number => {
+    let level = 1;
+    while (xp >= getXpRequiredForLevel(level + 1)) {
+      level++;
+    }
+    return level;
+  };
+
   return {
     gameState,
     createUserAndWorm,
@@ -636,6 +961,12 @@ export const useGameData = () => {
     equipItem,
     unequipItem,
     getTotalStats,
+    isTourAvailable,
+    getTourCooldown,
+    startTour,
+    startDungeon,
+    startRaid,
+    startAdventure,
     isLoggedIn: !!gameState.user && !!gameState.worm
   };
 };

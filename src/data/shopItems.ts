@@ -1,7 +1,279 @@
 import { Item } from '../types/game';
 
+// Equipment item templates for random generation
+export const equipmentTemplates = {
+  // Helmets
+  helmets: [
+    { nameHu: 'Csápdíszes Sisak', icon: '⛑️' },
+    { nameHu: 'Kitinkorona', icon: '👑' },
+    { nameHu: 'Szárnyfedő Kupak', icon: '🪖' },
+    { nameHu: 'Bogárfej Sisak', icon: '🪲' },
+    { nameHu: 'Szegmenscsuklya', icon: '🎭' },
+    { nameHu: 'Torvédő Sisak', icon: '⛑️' },
+    { nameHu: 'Szarvacska Sisak', icon: '🦏' },
+    { nameHu: 'Csillogó Fejhéj', icon: '✨' },
+    { nameHu: 'Kitinkupola', icon: '🎪' },
+    { nameHu: 'Bogárszarv Sisak', icon: '🪲' },
+    { nameHu: 'Csápcsőr Sisak', icon: '🦑' },
+    { nameHu: 'Páncélozott Fejhéj', icon: '🛡️' },
+    { nameHu: 'Szárnykupak', icon: '🪶' },
+    { nameHu: 'Szegmenskorona', icon: '👑' },
+    { nameHu: 'Torcsuklya', icon: '🎭' },
+    { nameHu: 'Csillogó Sisakocska', icon: '✨' },
+    { nameHu: 'Kitinburok Sisak', icon: '🥽' },
+    { nameHu: 'Szarvfej Védő', icon: '🦏' },
+    { nameHu: 'Bogárkorona', icon: '🪲' },
+    { nameHu: 'Csápfejfedő', icon: '🦑' }
+  ],
+
+  // Chest armor
+  chestpieces: [
+    { nameHu: 'Kitinpajzs Mellvas', icon: '🛡️' },
+    { nameHu: 'Szárnyfedő Vértezet', icon: '🪶' },
+    { nameHu: 'Bogárhéj Mellvért', icon: '🪲' },
+    { nameHu: 'Csáprágó Vért', icon: '🦑' },
+    { nameHu: 'Szegmenspáncél', icon: '🛡️' },
+    { nameHu: 'Potrohpajzs', icon: '🪖' },
+    { nameHu: 'Torpáncél', icon: '⚔️' },
+    { nameHu: 'Szarvbogár Mellvas', icon: '🦏' },
+    { nameHu: 'Lárvaburok Vért', icon: '🐛' },
+    { nameHu: 'Páncélszárny Mellvért', icon: '🪶' },
+    { nameHu: 'Csillogó Kitinbunda', icon: '✨' },
+    { nameHu: 'Pikkelytor Páncél', icon: '🐍' },
+    { nameHu: 'Pajzsocska Mellvért', icon: '🛡️' },
+    { nameHu: 'Csápcsont Vértezet', icon: '🦑' },
+    { nameHu: 'Bogárszárny Mellvas', icon: '🪲' },
+    { nameHu: 'Szegmensbunda', icon: '🧥' },
+    { nameHu: 'Torveret Mellpáncél', icon: '⚔️' },
+    { nameHu: 'Szarvacska Vértezet', icon: '🦏' },
+    { nameHu: 'Csápveret Mellvas', icon: '🦑' },
+    { nameHu: 'Páncélszárny Vért', icon: '🪶' }
+  ],
+
+  // Gloves/Accessories
+  gloves: [
+    { nameHu: 'Kitinkarom', icon: '🪝' },
+    { nameHu: 'Csápmarkoló', icon: '🦑' },
+    { nameHu: 'Szegmenskesztyű', icon: '🧤' },
+    { nameHu: 'Bogárkarom Kesztyű', icon: '🪲' },
+    { nameHu: 'Szarvujj Páncél', icon: '🦏' },
+    { nameHu: 'Szárnyfogó Kesztyű', icon: '🪶' },
+    { nameHu: 'Torujj Kesztyű', icon: '⚔️' },
+    { nameHu: 'Csillogó Páncélkesztyű', icon: '✨' },
+    { nameHu: 'Kitinujjak', icon: '🪝' },
+    { nameHu: 'Bogárfogás', icon: '🪲' },
+    { nameHu: 'Csápkarom', icon: '🦑' },
+    { nameHu: 'Szegmensmarkoló', icon: '🧤' },
+    { nameHu: 'Szarvacska Kesztyű', icon: '🦏' },
+    { nameHu: 'Bogárszárny Kesztyű', icon: '🪲' },
+    { nameHu: 'Torcsapás', icon: '⚔️' },
+    { nameHu: 'Pikkelykesztyű', icon: '🐍' },
+    { nameHu: 'Kitinujjacskák', icon: '🪝' },
+    { nameHu: 'Csillogó Karomkesztyű', icon: '✨' },
+    { nameHu: 'Bogárpajzs Kesztyű', icon: '🪲' },
+    { nameHu: 'Csápdíszes Kesztyű', icon: '🦑' }
+  ],
+
+  // Weapons
+  weapons: {
+    swords: [
+      { nameHu: 'Kitinkard', icon: '⚔️' },
+      { nameHu: 'Torpenge', icon: '🗡️' },
+      { nameHu: 'Csápzúzó Kard', icon: '🦑' },
+      { nameHu: 'Kitinvágó Kard', icon: '⚔️' },
+      { nameHu: 'Bogárpenge', icon: '🪲' },
+      { nameHu: 'Szarvkard', icon: '🦏' },
+      { nameHu: 'Szegmenspenge', icon: '🗡️' },
+      { nameHu: 'Kitinvértkard', icon: '⚔️' },
+      { nameHu: 'Bogárszárny Penge', icon: '🪲' },
+      { nameHu: 'Csillogó Kardocska', icon: '✨' },
+      { nameHu: 'Szarvcsapás Kard', icon: '🦏' }
+    ],
+    daggers: [
+      { nameHu: 'Csáptőr', icon: '🗡️' },
+      { nameHu: 'Kitinkés', icon: '🔪' },
+      { nameHu: 'Lárvaszúró', icon: '🪡' },
+      { nameHu: 'Szegmenspenge', icon: '🗡️' },
+      { nameHu: 'Potrohvágó', icon: '🔪' },
+      { nameHu: 'Bogárfog Tőr', icon: '🪲' },
+      { nameHu: 'Szarvacska Tőr', icon: '🦏' },
+      { nameHu: 'Csillogó Tőr', icon: '✨' },
+      { nameHu: 'Kitindöfő', icon: '🗡️' },
+      { nameHu: 'Csáppenge', icon: '🦑' },
+      { nameHu: 'Bogárkarom Tőr', icon: '🪲' },
+      { nameHu: 'Szegmenskés', icon: '🔪' },
+      { nameHu: 'Lárvavágó', icon: '🪡' },
+      { nameHu: 'Kitinkarmok', icon: '🪝' },
+      { nameHu: 'Bogárhegyű Tőr', icon: '🪲' },
+      { nameHu: 'Szárnyvágó Kés', icon: '🪶' },
+      { nameHu: 'Csillogó Pengetőr', icon: '✨' },
+      { nameHu: 'Szegmensszúró', icon: '🪡' },
+      { nameHu: 'Szarvtőr', icon: '🦏' }
+    ],
+    bows: [
+      { nameHu: 'Bogárszárny Íj', icon: '🏹' },
+      { nameHu: 'Szárnyvető Íj', icon: '🪶' },
+      { nameHu: 'Kitinnyílvető', icon: '🏹' },
+      { nameHu: 'Bogárszárny Kusza', icon: '🏹' },
+      { nameHu: 'Szarvhegyű Nyílvető', icon: '🦏' },
+      { nameHu: 'Kitiníj', icon: '🏹' },
+      { nameHu: 'Bogárhegyű Nyílvető', icon: '🪲' },
+      { nameHu: 'Szegmensdobó', icon: '🏹' },
+      { nameHu: 'Szárnygerely Kusza', icon: '🪶' },
+      { nameHu: 'Csillogó Nyílpuska', icon: '✨' },
+      { nameHu: 'Toríj', icon: '🏹' },
+      { nameHu: 'Bogárkaróvető', icon: '🪲' },
+      { nameHu: 'Kitinbolygó Íj', icon: '🏹' },
+      { nameHu: 'Csápnyílvető', icon: '🦑' },
+      { nameHu: 'Szegmenscsúzli', icon: '🏹' },
+      { nameHu: 'Potrohlövő', icon: '🏹' },
+      { nameHu: 'Szárnyhegyű Kusza', icon: '🪶' },
+      { nameHu: 'Bogárszárny Vető', icon: '🪲' }
+    ],
+    hammers: [
+      { nameHu: 'Páncélszárny Pöröly', icon: '🔨' },
+      { nameHu: 'Bogárzúzó Pöröly', icon: '🪲' },
+      { nameHu: 'Kitinzúzó Pöröly', icon: '🔨' },
+      { nameHu: 'Szarvtörő Buzogány', icon: '🦏' },
+      { nameHu: 'Páncélszárny Kalapács', icon: '🔨' },
+      { nameHu: 'Szegmenscsapó', icon: '🔨' },
+      { nameHu: 'Bogárfej Zúzó', icon: '🪲' },
+      { nameHu: 'Torromboló Pöröly', icon: '🔨' },
+      { nameHu: 'Kitinverő Kalapács', icon: '🔨' },
+      { nameHu: 'Szárnytörő Pöröly', icon: '🪶' },
+      { nameHu: 'Potrohzúzó', icon: '🔨' },
+      { nameHu: 'Csillogó Nagypöröly', icon: '✨' },
+      { nameHu: 'Kitintörő Kalapács', icon: '🔨' },
+      { nameHu: 'Bogárromboló', icon: '🪲' },
+      { nameHu: 'Kitinóriás Pöröly', icon: '🔨' },
+      { nameHu: 'Bogárerő Kalapács', icon: '🪲' },
+      { nameHu: 'Szárnyzúzó', icon: '🪶' },
+      { nameHu: 'Szegmensóriás', icon: '🔨' }
+    ],
+    staves: [
+      { nameHu: 'Kitinoltár Bot', icon: '🪄' },
+      { nameHu: 'Torjel Botocska', icon: '🪄' },
+      { nameHu: 'Kitinrelikvia', icon: '🪄' },
+      { nameHu: 'Bogárszent Bot', icon: '🪲' },
+      { nameHu: 'Szárnyoltár Bot', icon: '🪶' },
+      { nameHu: 'Bogárhívő Bot', icon: '🪲' },
+      { nameHu: 'Szegmensoltár', icon: '🪄' },
+      { nameHu: 'Torpálca', icon: '🪄' },
+      { nameHu: 'Kitinrúd', icon: '🪄' }
+    ]
+  }
+};
+
+// Generate random equipment item
+export const generateRandomEquipment = (tier: 'low' | 'mid-bottom' | 'mid-top' | 'high-bottom' | 'high-middle' | 'high-top'): Item => {
+  // Determine rarity based on tier
+  let rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  let statMultiplier: number;
+  let level: number;
+
+  switch (tier) {
+    case 'low':
+      rarity = Math.random() < 0.8 ? 'common' : 'rare';
+      statMultiplier = 1;
+      level = Math.floor(Math.random() * 3) + 1; // 1-3
+      break;
+    case 'mid-bottom':
+      rarity = Math.random() < 0.6 ? 'common' : 'rare';
+      statMultiplier = 1.5;
+      level = Math.floor(Math.random() * 3) + 3; // 3-5
+      break;
+    case 'mid-top':
+      rarity = Math.random() < 0.4 ? 'rare' : 'epic';
+      statMultiplier = 2;
+      level = Math.floor(Math.random() * 3) + 5; // 5-7
+      break;
+    case 'high-bottom':
+      rarity = Math.random() < 0.3 ? 'rare' : 'epic';
+      statMultiplier = 2.5;
+      level = Math.floor(Math.random() * 3) + 7; // 7-9
+      break;
+    case 'high-middle':
+      rarity = Math.random() < 0.2 ? 'epic' : 'legendary';
+      statMultiplier = 3;
+      level = Math.floor(Math.random() * 3) + 9; // 9-11
+      break;
+    case 'high-top':
+      rarity = 'legendary';
+      statMultiplier = 4;
+      level = Math.floor(Math.random() * 5) + 12; // 12-16
+      break;
+  }
+
+  // Choose equipment type
+  const equipmentTypes = ['helmet', 'armor', 'accessory', 'weapon'];
+  const equipmentType = equipmentTypes[Math.floor(Math.random() * equipmentTypes.length)];
+
+  let template: { nameHu: string; icon: string };
+  let subType: string;
+
+  switch (equipmentType) {
+    case 'helmet':
+      template = equipmentTemplates.helmets[Math.floor(Math.random() * equipmentTemplates.helmets.length)];
+      subType = 'helmet';
+      break;
+    case 'armor':
+      template = equipmentTemplates.chestpieces[Math.floor(Math.random() * equipmentTemplates.chestpieces.length)];
+      subType = 'armor';
+      break;
+    case 'accessory':
+      template = equipmentTemplates.gloves[Math.floor(Math.random() * equipmentTemplates.gloves.length)];
+      subType = 'accessory';
+      break;
+    case 'weapon':
+      const weaponTypes = Object.keys(equipmentTemplates.weapons);
+      const weaponType = weaponTypes[Math.floor(Math.random() * weaponTypes.length)];
+      const weaponArray = equipmentTemplates.weapons[weaponType as keyof typeof equipmentTemplates.weapons];
+      template = weaponArray[Math.floor(Math.random() * weaponArray.length)];
+      subType = 'weapon';
+      break;
+    default:
+      template = equipmentTemplates.helmets[0];
+      subType = 'helmet';
+  }
+
+  // Generate random stats
+  const statTypes = ['strength', 'dexterity', 'endurance', 'stamina', 'intelligence', 'charisma'];
+  const statBonus: Record<string, number> = {};
+  
+  // Number of stats based on rarity
+  const numStats = rarity === 'common' ? 1 : 
+                   rarity === 'rare' ? 2 : 
+                   rarity === 'epic' ? 3 : 4;
+
+  const shuffledStats = [...statTypes].sort(() => Math.random() - 0.5);
+  
+  for (let i = 0; i < numStats; i++) {
+    const stat = shuffledStats[i];
+    const baseValue = Math.floor(Math.random() * 3) + 1; // 1-3 base
+    statBonus[stat] = Math.ceil(baseValue * statMultiplier);
+  }
+
+  // Generate unique ID
+  const id = `${template.nameHu.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+  return {
+    id,
+    name: template.nameHu, // Using Hungarian as English name too for now
+    nameHu: template.nameHu,
+    description: `A ${rarity} piece of equipment found during exploration.`,
+    descriptionHu: `Egy ${rarity === 'common' ? 'közönséges' : rarity === 'rare' ? 'ritka' : rarity === 'epic' ? 'epikus' : 'legendás'} felszerelés, amit felfedezés során találtak.`,
+    type: 'equipment',
+    subType: subType as any,
+    price: Math.floor(level * 50 * (rarity === 'common' ? 1 : rarity === 'rare' ? 2 : rarity === 'epic' ? 4 : 8)),
+    rarity,
+    icon: template.icon,
+    statBonus,
+    level
+  };
+};
+
 export const defaultShopItems: Item[] = [
-  // Energy and consumable items
+  // Only keep basic consumables in shop
   {
     id: 'energy_drink',
     name: 'Energy Drink',
@@ -62,474 +334,6 @@ export const defaultShopItems: Item[] = [
       mood: 25
     }
   },
-
-  // === HELMETS ===
-  // Low tier helmets (Level 1-3)
-  {
-    id: 'csapdiszes_sisak',
-    name: 'Tentacle-Adorned Helmet',
-    nameHu: 'Csápdíszes Sisak',
-    description: 'A simple helmet decorated with dried tentacles.',
-    descriptionHu: 'Egyszerű sisak szárított csápokkal díszítve.',
-    type: 'equipment',
-    subType: 'helmet',
-    price: 45,
-    rarity: 'common',
-    icon: '⛑️',
-    statBonus: {
-      endurance: 1,
-      intelligence: 1
-    },
-    level: 1
-  },
-  {
-    id: 'kitinkorona',
-    name: 'Chitin Crown',
-    nameHu: 'Kitinkorona',
-    description: 'A lightweight crown made from polished chitin.',
-    descriptionHu: 'Könnyű korona fényezett kitinből.',
-    type: 'equipment',
-    subType: 'helmet',
-    price: 80,
-    rarity: 'common',
-    icon: '👑',
-    statBonus: {
-      charisma: 2,
-      intelligence: 1
-    },
-    level: 2
-  },
-  {
-    id: 'szarnyfedo_kupak',
-    name: 'Wing Cover Cap',
-    nameHu: 'Szárnyfedő Kupak',
-    description: 'A cap made from wing covers that provides good protection.',
-    descriptionHu: 'Szárnyborításból készült kupak, ami jó védelmet nyújt.',
-    type: 'equipment',
-    subType: 'helmet',
-    price: 120,
-    rarity: 'common',
-    icon: '🪖',
-    statBonus: {
-      endurance: 2,
-      dexterity: 1
-    },
-    level: 3
-  },
-
-  // Mid tier helmets (Level 4-6)
-  {
-    id: 'bogarfej_sisak',
-    name: 'Beetle Head Helmet',
-    nameHu: 'Bogárfej Sisak',
-    description: 'A helmet shaped like a beetle head, intimidating foes.',
-    descriptionHu: 'Bogárfej formájú sisak, ami megijeszti az ellenfeleket.',
-    type: 'equipment',
-    subType: 'helmet',
-    price: 200,
-    rarity: 'rare',
-    icon: '🪲',
-    statBonus: {
-      strength: 2,
-      endurance: 2,
-      charisma: 1
-    },
-    level: 4
-  },
-  {
-    id: 'csillogo_fejhej',
-    name: 'Gleaming Head Shell',
-    nameHu: 'Csillogó Fejhéj',
-    description: 'A shimmering head shell that reflects light beautifully.',
-    descriptionHu: 'Csillogó fejhéj, ami gyönyörűen veri vissza a fényt.',
-    type: 'equipment',
-    subType: 'helmet',
-    price: 300,
-    rarity: 'rare',
-    icon: '✨',
-    statBonus: {
-      intelligence: 3,
-      charisma: 2,
-      dexterity: 1
-    },
-    level: 5
-  },
-
-  // High tier helmets (Level 7+)
-  {
-    id: 'bogarszarv_sisak',
-    name: 'Beetle Horn Helmet',
-    nameHu: 'Bogárszarv Sisak',
-    description: 'A powerful helmet adorned with massive beetle horns.',
-    descriptionHu: 'Erős sisak hatalmas bogárszarvakkal díszítve.',
-    type: 'equipment',
-    subType: 'helmet',
-    price: 500,
-    rarity: 'epic',
-    icon: '🦏',
-    statBonus: {
-      strength: 4,
-      endurance: 3,
-      stamina: 2
-    },
-    level: 7
-  },
-
-  // === CHEST PIECES ===
-  // Low tier chest (Level 1-3)
-  {
-    id: 'kitinpajzs_mellvas',
-    name: 'Chitin Shield Chestplate',
-    nameHu: 'Kitinpajzs Mellvas',
-    description: 'Basic armor made from hardened chitin plates.',
-    descriptionHu: 'Alapvető páncél edzett kitinlemezekből.',
-    type: 'equipment',
-    subType: 'armor',
-    price: 60,
-    rarity: 'common',
-    icon: '🛡️',
-    statBonus: {
-      endurance: 2,
-      strength: 1
-    },
-    level: 1
-  },
-  {
-    id: 'szarnyfedo_vertezet',
-    name: 'Wing Cover Armor',
-    nameHu: 'Szárnyfedő Vértezet',
-    description: 'Flexible armor crafted from beetle wing covers.',
-    descriptionHu: 'Rugalmas páncél bogárszárny fedőkből készítve.',
-    type: 'equipment',
-    subType: 'armor',
-    price: 100,
-    rarity: 'common',
-    icon: '🪲',
-    statBonus: {
-      dexterity: 2,
-      endurance: 1,
-      stamina: 1
-    },
-    level: 2
-  },
-
-  // Mid tier chest (Level 4-6)
-  {
-    id: 'csaprago_vert',
-    name: 'Tentacle Bite Armor',
-    nameHu: 'Csáprágó Vért',
-    description: 'Armor reinforced with sharp tentacle spikes.',
-    descriptionHu: 'Páncél éles csáptüskékkel megerősítve.',
-    type: 'equipment',
-    subType: 'armor',
-    price: 250,
-    rarity: 'rare',
-    icon: '🦑',
-    statBonus: {
-      strength: 3,
-      endurance: 2,
-      dexterity: 1
-    },
-    level: 4
-  },
-  {
-    id: 'szegmenspancel',
-    name: 'Segment Armor',
-    nameHu: 'Szegmenspáncél',
-    description: 'Articulated armor that moves with your body.',
-    descriptionHu: 'Csuklós páncél, ami a testeddel mozog.',
-    type: 'equipment',
-    subType: 'armor',
-    price: 350,
-    rarity: 'rare',
-    icon: '🪖',
-    statBonus: {
-      dexterity: 3,
-      stamina: 2,
-      endurance: 2
-    },
-    level: 5
-  },
-
-  // High tier chest (Level 7+)
-  {
-    id: 'csillogo_kitinbunda',
-    name: 'Gleaming Chitin Coat',
-    nameHu: 'Csillogó Kitinbunda',
-    description: 'Magnificent armor that gleams with inner light.',
-    descriptionHu: 'Pompás páncél, ami belső fénnyel csillog.',
-    type: 'equipment',
-    subType: 'armor',
-    price: 600,
-    rarity: 'epic',
-    icon: '✨',
-    statBonus: {
-      endurance: 4,
-      intelligence: 3,
-      charisma: 3,
-      stamina: 2
-    },
-    level: 7
-  },
-
-  // === GLOVES ===
-  // Low tier gloves (Level 1-3)
-  {
-    id: 'kitinkarom',
-    name: 'Chitin Claws',
-    nameHu: 'Kitinkarom',
-    description: 'Sharp claws made from hardened chitin.',
-    descriptionHu: 'Éles karmok edzett kitinből.',
-    type: 'equipment',
-    subType: 'accessory',
-    price: 40,
-    rarity: 'common',
-    icon: '🪝',
-    statBonus: {
-      strength: 2,
-      dexterity: 1
-    },
-    level: 1
-  },
-  {
-    id: 'csapmarkolo',
-    name: 'Tentacle Grippers',
-    nameHu: 'Csápmarkoló',
-    description: 'Flexible gloves that enhance grip strength.',
-    descriptionHu: 'Rugalmas kesztyűk, amik növelik a fogóerőt.',
-    type: 'equipment',
-    subType: 'accessory',
-    price: 70,
-    rarity: 'common',
-    icon: '🦑',
-    statBonus: {
-      dexterity: 2,
-      strength: 1
-    },
-    level: 2
-  },
-
-  // Mid tier gloves (Level 4-6)
-  {
-    id: 'bogarkarom_kesztyu',
-    name: 'Beetle Claw Gloves',
-    nameHu: 'Bogárkarom Kesztyű',
-    description: 'Gloves with retractable beetle claws.',
-    descriptionHu: 'Kesztyűk behúzható bogárkarmokkal.',
-    type: 'equipment',
-    subType: 'accessory',
-    price: 180,
-    rarity: 'rare',
-    icon: '🪲',
-    statBonus: {
-      strength: 3,
-      dexterity: 2
-    },
-    level: 4
-  },
-  {
-    id: 'csillogo_pancel_kesztyu',
-    name: 'Gleaming Armored Gloves',
-    nameHu: 'Csillogó Páncélkesztyű',
-    description: 'Beautifully crafted armored gloves.',
-    descriptionHu: 'Gyönyörűen megmunkált páncélkesztyűk.',
-    type: 'equipment',
-    subType: 'accessory',
-    price: 280,
-    rarity: 'rare',
-    icon: '✨',
-    statBonus: {
-      dexterity: 3,
-      endurance: 2,
-      charisma: 1
-    },
-    level: 5
-  },
-
-  // === WEAPONS ===
-  // Swords
-  {
-    id: 'kitinkard',
-    name: 'Chitin Sword',
-    nameHu: 'Kitinkard',
-    description: 'A sturdy sword forged from chitin.',
-    descriptionHu: 'Erős kard kitinből kovácsolva.',
-    type: 'equipment',
-    subType: 'weapon',
-    price: 90,
-    rarity: 'common',
-    icon: '⚔️',
-    statBonus: {
-      strength: 3,
-      dexterity: 1
-    },
-    level: 2
-  },
-  {
-    id: 'bogar_penge',
-    name: 'Beetle Blade',
-    nameHu: 'Bogárpenge',
-    description: 'A razor-sharp blade with beetle motifs.',
-    descriptionHu: 'Borotvaéles penge bogár díszítéssel.',
-    type: 'equipment',
-    subType: 'weapon',
-    price: 200,
-    rarity: 'rare',
-    icon: '🗡️',
-    statBonus: {
-      strength: 4,
-      dexterity: 2,
-      charisma: 1
-    },
-    level: 4
-  },
-  {
-    id: 'szarvkard',
-    name: 'Horn Sword',
-    nameHu: 'Szarvkard',
-    description: 'A powerful sword made from giant beetle horn.',
-    descriptionHu: 'Erős kard óriás bogárszarvból.',
-    type: 'equipment',
-    subType: 'weapon',
-    price: 400,
-    rarity: 'epic',
-    icon: '🦏',
-    statBonus: {
-      strength: 5,
-      endurance: 2,
-      dexterity: 1
-    },
-    level: 6
-  },
-
-  // Daggers
-  {
-    id: 'csaptor',
-    name: 'Tentacle Dagger',
-    nameHu: 'Csáptőr',
-    description: 'A quick dagger shaped like a tentacle.',
-    descriptionHu: 'Gyors tőr csáp alakban.',
-    type: 'equipment',
-    subType: 'weapon',
-    price: 50,
-    rarity: 'common',
-    icon: '🗡️',
-    statBonus: {
-      dexterity: 3,
-      strength: 1
-    },
-    level: 1
-  },
-  {
-    id: 'larvaszuro',
-    name: 'Larva Piercer',
-    nameHu: 'Lárvaszúró',
-    description: 'A thin piercing dagger designed for precision.',
-    descriptionHu: 'Vékony szúró tőr precíziós munkához.',
-    type: 'equipment',
-    subType: 'weapon',
-    price: 80,
-    rarity: 'common',
-    icon: '🪡',
-    statBonus: {
-      dexterity: 4,
-      intelligence: 1
-    },
-    level: 2
-  },
-
-  // Bows
-  {
-    id: 'bogarszarny_ij',
-    name: 'Beetle Wing Bow',
-    nameHu: 'Bogárszárny Íj',
-    description: 'A bow crafted from flexible beetle wings.',
-    descriptionHu: 'Íj rugalmas bogárszárnyakból készítve.',
-    type: 'equipment',
-    subType: 'weapon',
-    price: 120,
-    rarity: 'common',
-    icon: '🏹',
-    statBonus: {
-      dexterity: 4,
-      stamina: 1
-    },
-    level: 3
-  },
-  {
-    id: 'kitinnyilveto',
-    name: 'Chitin Crossbow',
-    nameHu: 'Kitinnyílvető',
-    description: 'A powerful crossbow with chitin frame.',
-    descriptionHu: 'Erős számszeríj kitin kerettel.',
-    type: 'equipment',
-    subType: 'weapon',
-    price: 250,
-    rarity: 'rare',
-    icon: '🏹',
-    statBonus: {
-      dexterity: 5,
-      strength: 2
-    },
-    level: 5
-  },
-
-  // Hammers
-  {
-    id: 'bogar_zuzo_porely',
-    name: 'Beetle Crusher Hammer',
-    nameHu: 'Bogárzúzó Pöröly',
-    description: 'A massive hammer for crushing enemies.',
-    descriptionHu: 'Hatalmas pöröly ellenfelek összezúzására.',
-    type: 'equipment',
-    subType: 'weapon',
-    price: 300,
-    rarity: 'rare',
-    icon: '🔨',
-    statBonus: {
-      strength: 6,
-      endurance: 2
-    },
-    level: 5
-  },
-
-  // Staves and Wands
-  {
-    id: 'kitin_oltar_bot',
-    name: 'Chitin Altar Staff',
-    nameHu: 'Kitinoltár Bot',
-    description: 'A mystical staff carved from sacred chitin.',
-    descriptionHu: 'Misztikus bot szent kitinből faragva.',
-    type: 'equipment',
-    subType: 'weapon',
-    price: 180,
-    rarity: 'rare',
-    icon: '🪄',
-    statBonus: {
-      intelligence: 4,
-      charisma: 2
-    },
-    level: 4
-  },
-  {
-    id: 'szarnykereszt_palca',
-    name: 'Wing Cross Wand',
-    nameHu: 'Szárnykereszt Pálca',
-    description: 'A wand blessed with wing symbols.',
-    descriptionHu: 'Pálca szárny szimbólumokkal megáldva.',
-    type: 'equipment',
-    subType: 'weapon',
-    price: 100,
-    rarity: 'common',
-    icon: '🪄',
-    statBonus: {
-      intelligence: 3,
-      charisma: 1
-    },
-    level: 3
-  },
-
-  // === ACCESSORIES ===
   {
     id: 'protein_shake',
     name: 'Protein Shake',
@@ -559,5 +363,39 @@ export const defaultShopItems: Item[] = [
     effects: {
       intelligence: 1
     }
+  },
+  
+  // Just a few basic starter equipment pieces
+  {
+    id: 'basic_helmet',
+    name: 'Basic Helmet',
+    nameHu: 'Alapvető Sisak',
+    description: 'A simple helmet for beginners.',
+    descriptionHu: 'Egyszerű sisak kezdőknek.',
+    type: 'equipment',
+    subType: 'helmet',
+    price: 50,
+    rarity: 'common',
+    icon: '⛑️',
+    statBonus: {
+      endurance: 1
+    },
+    level: 1
+  },
+  {
+    id: 'basic_sword',
+    name: 'Basic Sword',
+    nameHu: 'Alapvető Kard',
+    description: 'A simple sword for beginners.',
+    descriptionHu: 'Egyszerű kard kezdőknek.',
+    type: 'equipment',
+    subType: 'weapon',
+    price: 60,
+    rarity: 'common',
+    icon: '⚔️',
+    statBonus: {
+      strength: 2
+    },
+    level: 1
   }
 ];

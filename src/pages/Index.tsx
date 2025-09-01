@@ -30,6 +30,12 @@ const Index = () => {
     equipItem,
     unequipItem,
     getTotalStats,
+    isTourAvailable,
+    getTourCooldown,
+    startTour,
+    startDungeon,
+    startRaid,
+    startAdventure,
     isLoggedIn
   } = useGameData();
 
@@ -115,9 +121,9 @@ const Index = () => {
           <TourRoom 
             tours={tourResults}
             worm={worm}
-            onStartTour={() => {}}
-            isTourAvailable={() => true}
-            getTourCooldown={() => 0}
+            onStartTour={startTour}
+            isTourAvailable={isTourAvailable}
+            getTourCooldown={getTourCooldown}
           />
         );
       
@@ -137,9 +143,9 @@ const Index = () => {
         return (
           <PveArena 
             worm={worm}
-            onStartDungeon={() => {}}
-            onStartRaid={() => {}}
-            onStartAdventure={() => {}}
+            onStartDungeon={startDungeon}
+            onStartRaid={startRaid}
+            onStartAdventure={startAdventure}
           />
         );
       
