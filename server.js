@@ -49,25 +49,38 @@ const collectBody = (req) =>
     req.on('end', () => resolve(body));
   });
 
+
 async function readJson(req, maxBytes = 1_000_000) {
   return new Promise((resolve, reject) => {
-    let data = '';
+    const ct = req.headers['content-type'] || '';
+    if (!ct.includes('application/json')) {
+      return reject(new Error('Invalid JSON'));
+    }
+
+    let size = 0;
+    const chunks = [];
+
     req.on('data', (chunk) => {
-      data += chunk;
-      if (data.length > maxBytes) {
+      size += chunk.length;
+      if (size > maxBytes) {
         reject(new Error('Body too large'));
-        req.destroy();
+        req.destroy(); // stop reading more data
+        return;
       }
+      chunks.push(chunk);
     });
+
     req.on('end', () => {
       try {
-        if (!data) return resolve({});
-        resolve(JSON.parse(data));
+        const raw = Buffer.concat(chunks).toString('utf8').trim();
+        const data = raw ? JSON.parse(raw) : {};
+        resolve(data);
       } catch {
         reject(new Error('Invalid JSON'));
       }
     });
-    req.on('error', reject);
+
+    req.on('error', (e) => reject(e));
   });
 }
 
