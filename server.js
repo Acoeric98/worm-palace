@@ -90,46 +90,53 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.url === '/api/register' && req.method === 'POST') {
-    (async () => {
-      try {
-        const body = await readJson(req);
-        const username = ((body.username ?? body.user) ?? '').toString().trim();
-        const password = ((body.password ?? body.pass) ?? '').toString().trim();
+    try {
+      const body = await readJson(req);
+      const username = ((body.username ?? body.user) ?? '').toString().trim();
+      const password = ((body.password ?? body.pass) ?? '').toString().trim();
+      const data = body.data ?? {};
 
-        if (!username || !password) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ message: 'Missing username or password' }));
-          return;
-        }
-
-        if (username.length < 3 || password.length < 3) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ message: 'Too short (min 3 chars)' }));
-          return;
-        }
-
-        const usersDir = path.join(process.cwd(), 'users');
-        const userFile = path.join(usersDir, `${username}.json`);
-        if (!fs.existsSync(usersDir)) fs.mkdirSync(usersDir, { recursive: true });
-        if (fs.existsSync(userFile)) {
-          res.writeHead(409, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ message: 'User already exists' }));
-          return;
-        }
-
-        const record = { username, hash: password, createdAt: new Date().toISOString() };
-        fs.writeFileSync(userFile, JSON.stringify(record, null, 2));
-
-        res.writeHead(201, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: true }));
-      } catch (e) {
-        const msg = e && e.message ? e.message : 'Invalid body';
+      if (!username || !password) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(
-          JSON.stringify({ message: msg === 'Invalid JSON' ? 'Invalid JSON' : 'Invalid body' })
-        );
+        res.end(JSON.stringify({ message: 'Missing username or password' }));
+        return;
       }
-    })();
+
+      if (username.length < 3 || password.length < 3) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ message: 'Too short (min 3 chars)' }));
+        return;
+      }
+
+      if (!/^[\w.-]+$/.test(username)) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ message: 'Invalid username' }));
+        return;
+      }
+
+      if (await readUser(username)) {
+        res.writeHead(409, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ message: 'User already exists' }));
+        return;
+      }
+
+      const record = {
+        passwordHash: hashPassword(password),
+        data,
+        createdAt: new Date().toISOString()
+      };
+
+      await writeUser(username, record);
+
+      res.writeHead(201, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ status: 'ok' }));
+    } catch (e) {
+      const msg = e && e.message ? e.message : 'Invalid body';
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(
+        JSON.stringify({ message: msg === 'Invalid JSON' ? 'Invalid JSON' : 'Invalid body' })
+      );
+    }
     return;
   } else if (req.method === 'POST' && req.url === '/api/login') {
     try {
