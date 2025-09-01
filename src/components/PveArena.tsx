@@ -33,7 +33,14 @@ export const PveArena = ({ worm, onStartDungeon, onStartRaid, onStartAdventure }
     }
   };
 
-  const dungeonDifficulties = [
+  const dungeonDifficulties: {
+    id: 'easy' | 'medium' | 'hard' | 'elite';
+    nameHu: string;
+    description: string;
+    energyCost: number;
+    minLevel: number;
+    rewards: string;
+  }[] = [
     {
       id: 'easy',
       nameHu: 'Könnyű Börtön',
@@ -120,7 +127,7 @@ export const PveArena = ({ worm, onStartDungeon, onStartRaid, onStartAdventure }
                       </div>
                       <Button
                         size="sm"
-                        onClick={() => onStartDungeon(dungeon.id as any)}
+                        onClick={() => onStartDungeon(dungeon.id)}
                         disabled={!canAfford || !meetsLevel}
                       >
                         Indulás
