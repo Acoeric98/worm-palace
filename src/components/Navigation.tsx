@@ -1,7 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { LogOut } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
 
 interface NavigationProps {
   currentPage: 'dashboard' | 'training' | 'jobs' | 'profile' | 'shop' | 'inventory';
@@ -10,7 +8,6 @@ interface NavigationProps {
 }
 
 export const Navigation = ({ currentPage, onNavigate, coins }: NavigationProps) => {
-  const { logout } = useAuth();
   const navItems = [
     { id: 'dashboard', label: 'Vezérlőpult', icon: '🏠' },
     { id: 'training', label: 'Tréning Terem', icon: '💪' },
@@ -38,7 +35,7 @@ export const Navigation = ({ currentPage, onNavigate, coins }: NavigationProps) 
           </div>
           
           {/* Navigation buttons */}
-          <div className="flex gap-2 flex-wrap items-center">
+          <div className="flex gap-2 flex-wrap">
             {navItems.map(item => (
               <Button
                 key={item.id}
@@ -50,16 +47,6 @@ export const Navigation = ({ currentPage, onNavigate, coins }: NavigationProps) 
                 <span className="hidden sm:inline">{item.label}</span>
               </Button>
             ))}
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={logout}
-              className="text-muted-foreground hover:text-foreground ml-2"
-              title="Kijelentkezés"
-            >
-              <LogOut className="w-4 h-4" />
-            </Button>
           </div>
         </div>
       </div>

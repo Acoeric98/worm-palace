@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useGameData } from '../hooks/useGameData';
-import { useAuth } from '../hooks/useAuth';
 import { Navigation } from '../components/Navigation';
 import { Dashboard } from '../components/Dashboard';
 import { TrainingRoom } from '../components/TrainingRoom';
@@ -9,13 +8,11 @@ import { SetupForm } from '../components/SetupForm';
 import { ProfileEditor } from '../components/ProfileEditor';
 import { Shop } from '../components/Shop';
 import { Inventory } from '../components/Inventory';
-import { AuthForm } from '../components/AuthForm';
 
 type Page = 'dashboard' | 'training' | 'jobs' | 'profile' | 'shop' | 'inventory';
 
 const Index = () => {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
-  const { isAuthenticated, isLoading } = useAuth();
   const {
     gameState,
     createUserAndWorm,
@@ -33,24 +30,7 @@ const Index = () => {
     isLoggedIn
   } = useGameData();
 
-  // Show loading state
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl animate-bounce">🪱</div>
-          <p className="mt-4 text-muted-foreground">Betöltés...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // If not authenticated, show auth form
-  if (!isAuthenticated) {
-    return <AuthForm />;
-  }
-
-  // If authenticated but no worm exists, show setup form
+  // If no user/worm exists, show setup form
   if (!isLoggedIn) {
     return <SetupForm onCreateWorm={createUserAndWorm} />;
   }
