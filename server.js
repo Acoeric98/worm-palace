@@ -1,39 +1,54 @@
 import http from 'http';
-import fs from 'fs';
+import fs from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
 
 const USERS_DIR = path.join(process.cwd(), 'users');
-const DATA_FILE = path.join(USERS_DIR, 'users.json');
+const BACKUP_DIR = path.join(process.cwd(), 'backup');
 
-if (!fs.existsSync(USERS_DIR)) {
-  fs.mkdirSync(USERS_DIR);
-}
-if (!fs.existsSync(DATA_FILE)) {
-  fs.writeFileSync(DATA_FILE, '[]', 'utf-8');
-}
-
-const readUsers = () => {
-  const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-  return JSON.parse(raw);
+const ensureDir = async (dir) => {
+  await fs.mkdir(dir, { recursive: true });
 };
 
-const writeUsers = (users) => {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(users, null, 2));
+const getUserFile = (username) =>
+  path.join(USERS_DIR, `${username}.json`);
+
+const readUser = async (username) => {
+  try {
+    const raw = await fs.readFile(getUserFile(username), 'utf-8');
+    return JSON.parse(raw);
+  } catch (err) {
+    if (err.code === 'ENOENT') return null;
+    if (err instanceof SyntaxError) {
+      const e = new Error('INVALID_JSON');
+      e.code = 'INVALID_JSON';
+      throw e;
+    }
+    throw err;
+  }
+};
+
+const writeUser = async (username, user) => {
+  await fs.writeFile(
+    getUserFile(username),
+    JSON.stringify(user, null, 2),
+    'utf-8'
+  );
 };
 
 const hashPassword = (password) =>
   crypto.createHash('sha256').update(password).digest('hex');
 
-const collectBody = (req, cb) => {
-  let body = '';
-  req.on('data', (chunk) => {
-    body += chunk;
+const collectBody = (req) =>
+  new Promise((resolve) => {
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk;
+    });
+    req.on('end', () => resolve(body));
   });
-  req.on('end', () => cb(body));
-};
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -43,46 +58,117 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  await ensureDir(USERS_DIR);
+
   if (req.method === 'POST' && req.url === '/api/register') {
-    collectBody(req, (body) => {
-      try {
-        const { username, password, data } = JSON.parse(body);
-        const users = readUsers();
-        if (users.find((u) => u.username === username)) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ message: 'User exists' }));
-          return;
-        }
-        const passwordHash = hashPassword(password);
-        users.push({ username, passwordHash, data });
-        writeUsers(users);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ status: 'ok' }));
-      } catch {
+    try {
+      const body = await collectBody(req);
+      const { username, password, data } = JSON.parse(body);
+      if (!username || !password) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ message: 'Invalid body' }));
+        return;
       }
-    });
+      let existing;
+      try {
+        existing = await readUser(username);
+      } catch (err) {
+        if (err.code === 'INVALID_JSON') {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ message: 'Corrupted user data' }));
+          return;
+        }
+        throw err;
+      }
+      if (existing) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ message: 'User already exists' }));
+        return;
+      }
+      const user = {
+        username,
+        passwordHash: hashPassword(password),
+        created: new Date().toISOString(),
+        data,
+      };
+      await writeUser(username, user);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ status: 'ok' }));
+    } catch {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ message: 'Invalid body' }));
+    }
   } else if (req.method === 'POST' && req.url === '/api/login') {
-    collectBody(req, (body) => {
+    try {
+      const body = await collectBody(req);
+      const { username, password } = JSON.parse(body);
+      let user;
       try {
-        const { username, password } = JSON.parse(body);
-        const users = readUsers();
-        const user = users.find(
-          (u) => u.username === username && u.passwordHash === hashPassword(password)
-        );
-        if (!user) {
-          res.writeHead(401, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ message: 'Invalid credentials' }));
+        user = await readUser(username);
+      } catch (err) {
+        if (err.code === 'INVALID_JSON') {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ message: 'Corrupted user data' }));
           return;
         }
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(user.data));
-      } catch {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ message: 'Invalid body' }));
+        throw err;
       }
-    });
+      if (!user) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ message: 'User not found' }));
+        return;
+      }
+      if (user.passwordHash !== hashPassword(password)) {
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ message: 'Invalid credentials' }));
+        return;
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(user.data));
+    } catch {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ message: 'Invalid body' }));
+    }
+  } else if (req.method === 'POST' && req.url === '/api/backup') {
+    try {
+      await ensureDir(BACKUP_DIR);
+      const files = await fs.readdir(USERS_DIR);
+      await Promise.all(
+        files
+          .filter((f) => f.endsWith('.json'))
+          .map((f) =>
+            fs.copyFile(
+              path.join(USERS_DIR, f),
+              path.join(BACKUP_DIR, f)
+            )
+          )
+      );
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ status: 'ok' }));
+    } catch {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ message: 'Backup failed' }));
+    }
+  } else if (req.method === 'POST' && req.url === '/api/restore') {
+    try {
+      const files = await fs.readdir(BACKUP_DIR);
+      await ensureDir(USERS_DIR);
+      await Promise.all(
+        files
+          .filter((f) => f.endsWith('.json'))
+          .map((f) =>
+            fs.copyFile(
+              path.join(BACKUP_DIR, f),
+              path.join(USERS_DIR, f)
+            )
+          )
+      );
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ status: 'ok' }));
+    } catch {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ message: 'Restore failed' }));
+    }
   } else {
     res.writeHead(404);
     res.end();
