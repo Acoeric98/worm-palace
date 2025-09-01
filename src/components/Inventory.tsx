@@ -48,24 +48,34 @@ export const Inventory = ({
 
   const totalStats = getTotalStats(worm);
 
-  const getSlotIcon = (slot: string) => {
+  const getSlotIcon = (slot: keyof Worm['equipment']): JSX.Element => {
     switch (slot) {
-      case 'helmet': return <Crown className="h-4 w-4" />;
-      case 'armor': return <Shirt className="h-4 w-4" />;
-      case 'weapon': return <Sword className="h-4 w-4" />;
-      case 'accessory': return <Star className="h-4 w-4" />;
-      default: return <Package className="h-4 w-4" />;
+      case 'helmet':
+        return <Crown className="h-4 w-4" />;
+      case 'armor':
+        return <Shirt className="h-4 w-4" />;
+      case 'weapon':
+        return <Sword className="h-4 w-4" />;
+      case 'accessory':
+        return <Star className="h-4 w-4" />;
     }
+    const _exhaustiveCheck: never = slot;
+    return _exhaustiveCheck;
   };
 
-  const getSlotName = (slot: string) => {
+  const getSlotName = (slot: keyof Worm['equipment']): string => {
     switch (slot) {
-      case 'helmet': return 'Sisak';
-      case 'armor': return 'Páncél';
-      case 'weapon': return 'Fegyver';
-      case 'accessory': return 'Kiegészítő';
-      default: return 'Ismeretlen';
+      case 'helmet':
+        return 'Sisak';
+      case 'armor':
+        return 'Páncél';
+      case 'weapon':
+        return 'Fegyver';
+      case 'accessory':
+        return 'Kiegészítő';
     }
+    const _exhaustiveCheck: never = slot;
+    return _exhaustiveCheck;
   };
 
   return (
@@ -96,7 +106,7 @@ export const Inventory = ({
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {Object.entries(worm.equipment).map(([slot, itemId]) => {
+                {(Object.entries(worm.equipment) as [keyof Worm['equipment'], string | undefined][]).map(([slot, itemId]) => {
                   const equippedItem = itemId ? getItemDetails(itemId) : null;
                   return (
                     <div key={slot} className="flex items-center justify-between p-3 border rounded-lg">
@@ -120,7 +130,7 @@ export const Inventory = ({
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => onUnequipItem(slot as keyof Worm['equipment'])}
+                          onClick={() => onUnequipItem(slot)}
                         >
                           Levétel
                         </Button>
@@ -156,7 +166,7 @@ export const Inventory = ({
                             <div>
                               <p className="font-medium">{item.nameHu}</p>
                               <p className="text-xs text-muted-foreground">
-                                {getSlotName(item.subType || '')}
+                                {item.subType ? getSlotName(item.subType as keyof Worm['equipment']) : ''}
                               </p>
                               {item.statBonus && (
                                 <div className="text-xs text-blue-500">
