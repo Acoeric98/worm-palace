@@ -1,5 +1,6 @@
 import http from 'http';
-import fs from 'fs/promises';
+import fs from 'fs';
+import fsp from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
 
@@ -7,7 +8,7 @@ const USERS_DIR = path.join(process.cwd(), 'users');
 const BACKUP_DIR = path.join(process.cwd(), 'backup');
 
 const ensureDir = async (dir) => {
-  await fs.mkdir(dir, { recursive: true });
+  await fsp.mkdir(dir, { recursive: true });
 };
 
 const getUserFile = (username) =>
@@ -15,7 +16,7 @@ const getUserFile = (username) =>
 
 const readUser = async (username) => {
   try {
-    const raw = await fs.readFile(getUserFile(username), 'utf-8');
+    const raw = await fsp.readFile(getUserFile(username), 'utf-8');
     return JSON.parse(raw);
   } catch (err) {
     if (err.code === 'ENOENT') return null;
@@ -29,7 +30,7 @@ const readUser = async (username) => {
 };
 
 const writeUser = async (username, user) => {
-  await fs.writeFile(
+  await fsp.writeFile(
     getUserFile(username),
     JSON.stringify(user, null, 2),
     'utf-8'
@@ -48,6 +49,28 @@ const collectBody = (req) =>
     req.on('end', () => resolve(body));
   });
 
+async function readJson(req, maxBytes = 1_000_000) {
+  return new Promise((resolve, reject) => {
+    let data = '';
+    req.on('data', (chunk) => {
+      data += chunk;
+      if (data.length > maxBytes) {
+        reject(new Error('Body too large'));
+        req.destroy();
+      }
+    });
+    req.on('end', () => {
+      try {
+        if (!data) return resolve({});
+        resolve(JSON.parse(data));
+      } catch {
+        reject(new Error('Invalid JSON'));
+      }
+    });
+    req.on('error', reject);
+  });
+}
+
 const server = http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
@@ -59,45 +82,55 @@ const server = http.createServer(async (req, res) => {
   }
 
   await ensureDir(USERS_DIR);
+ 
+  if (req.url === '/api/health' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true }));
+    return;
+  }
 
-  if (req.method === 'POST' && req.url === '/api/register') {
-    try {
-      const body = await collectBody(req);
-      const { username, password, data } = JSON.parse(body);
-      if (!username || !password) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ message: 'Invalid body' }));
-        return;
-      }
-      let existing;
+  if (req.url === '/api/register' && req.method === 'POST') {
+    (async () => {
       try {
-        existing = await readUser(username);
-      } catch (err) {
-        if (err.code === 'INVALID_JSON') {
-          res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ message: 'Corrupted user data' }));
+        const body = await readJson(req);
+        const username = ((body.username ?? body.user) ?? '').toString().trim();
+        const password = ((body.password ?? body.pass) ?? '').toString().trim();
+
+        if (!username || !password) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ message: 'Missing username or password' }));
           return;
         }
-        throw err;
-      }
-      if (existing) {
+
+        if (username.length < 3 || password.length < 3) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ message: 'Too short (min 3 chars)' }));
+          return;
+        }
+
+        const usersDir = path.join(process.cwd(), 'users');
+        const userFile = path.join(usersDir, `${username}.json`);
+        if (!fs.existsSync(usersDir)) fs.mkdirSync(usersDir, { recursive: true });
+        if (fs.existsSync(userFile)) {
+          res.writeHead(409, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ message: 'User already exists' }));
+          return;
+        }
+
+        const record = { username, hash: password, createdAt: new Date().toISOString() };
+        fs.writeFileSync(userFile, JSON.stringify(record, null, 2));
+
+        res.writeHead(201, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+      } catch (e) {
+        const msg = e && e.message ? e.message : 'Invalid body';
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ message: 'User already exists' }));
-        return;
+        res.end(
+          JSON.stringify({ message: msg === 'Invalid JSON' ? 'Invalid JSON' : 'Invalid body' })
+        );
       }
-      const user = {
-        username,
-        passwordHash: hashPassword(password),
-        created: new Date().toISOString(),
-        data,
-      };
-      await writeUser(username, user);
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ status: 'ok' }));
-    } catch {
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ message: 'Invalid body' }));
-    }
+    })();
+    return;
   } else if (req.method === 'POST' && req.url === '/api/login') {
     try {
       const body = await collectBody(req);
@@ -132,12 +165,12 @@ const server = http.createServer(async (req, res) => {
   } else if (req.method === 'POST' && req.url === '/api/backup') {
     try {
       await ensureDir(BACKUP_DIR);
-      const files = await fs.readdir(USERS_DIR);
+      const files = await fsp.readdir(USERS_DIR);
       await Promise.all(
         files
           .filter((f) => f.endsWith('.json'))
           .map((f) =>
-            fs.copyFile(
+            fsp.copyFile(
               path.join(USERS_DIR, f),
               path.join(BACKUP_DIR, f)
             )
@@ -151,13 +184,13 @@ const server = http.createServer(async (req, res) => {
     }
   } else if (req.method === 'POST' && req.url === '/api/restore') {
     try {
-      const files = await fs.readdir(BACKUP_DIR);
+      const files = await fsp.readdir(BACKUP_DIR);
       await ensureDir(USERS_DIR);
       await Promise.all(
         files
           .filter((f) => f.endsWith('.json'))
           .map((f) =>
-            fs.copyFile(
+            fsp.copyFile(
               path.join(BACKUP_DIR, f),
               path.join(USERS_DIR, f)
             )
@@ -170,8 +203,8 @@ const server = http.createServer(async (req, res) => {
       res.end(JSON.stringify({ message: 'Restore failed' }));
     }
   } else {
-    res.writeHead(404);
-    res.end();
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ message: 'Not found' }));
   }
 });
 
