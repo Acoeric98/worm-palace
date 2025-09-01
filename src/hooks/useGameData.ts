@@ -10,7 +10,7 @@ import defaultWormImage from '../assets/default-worm.png';
 
 const STORAGE_KEY = 'worm-daycare-data';
 // Base URL of the authentication API. Can be overridden with VITE_API_URL.
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_URL = "";
 
 // Generate random worm stats for new worms
 const generateRandomStats = () => ({
