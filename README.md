@@ -36,6 +36,25 @@ This project is built with:
 - preview: `bun run preview`
 Alternatív: ha `npm`/`pnpm` jobban kézre áll, használd a package.json scriptjeit (pl. `npm run dev`).
 
+### API szerver
+
+A kliens a `VITE_API_URL` környezeti változóval konfigurálható hitelesítési API
+címet vár. Alapértelmezetten a `http://localhost:3001` címre küld kéréseket.
+
+Ha ezen a címen nem fut szerver, a böngésző `ERR_CONNECTION_REFUSED` hibát jelez.
+Indítsd el a mellékelt Node.js szervert helyben:
+
+```bash
+node server.js
+```
+
+Vagy hozz létre `.env` fájlt, és állítsd be a `VITE_API_URL` változót egy
+működő háttér API végpontra:
+
+```bash
+VITE_API_URL=http://példa.szerver:port
+```
+
 ## 3) Struktúra (kivonat)
 
 ```
