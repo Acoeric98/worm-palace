@@ -9,7 +9,8 @@ import { useToast } from './use-toast';
 import defaultWormImage from '../assets/default-worm.png';
 
 const STORAGE_KEY = 'worm-daycare-data';
-const API_URL = 'http://localhost:3001';
+const host = window.location.hostname;
+const API_URL = `http://${host}:3001`;
 
 // Generate random worm stats for new worms
 const generateRandomStats = () => ({
