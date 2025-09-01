@@ -62,32 +62,35 @@ const randomEquipmentSubType = () => (
   ['helmet', 'armor', 'weapon', 'accessory'] as const
 )[Math.floor(Math.random() * 4)];
 
+const defaultGameState: GameState = {
+  user: null,
+  worm: null,
+  trainings: defaultTrainings,
+  jobs: defaultJobs,
+  jobAssignments: [],
+  dailyJobsCompleted: 0,
+  inventory: [],
+  shopItems: defaultShopItems,
+  tourResults: defaultTours,
+  battles: [],
+  abilities: defaultAbilities,
+  players: [],
+  leaderboard: []
+};
+
 export const useGameData = () => {
   const [gameState, setGameState] = useState<GameState>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        return { ...defaultGameState, ...parsed };
       } catch (error) {
         console.warn('Failed to parse game data from localStorage', error);
         localStorage.removeItem(STORAGE_KEY);
       }
     }
-    return {
-      user: null,
-      worm: null,
-      trainings: defaultTrainings,
-      jobs: defaultJobs,
-      jobAssignments: [],
-      dailyJobsCompleted: 0,
-      inventory: [],
-      shopItems: defaultShopItems,
-      tourResults: defaultTours,
-      battles: [],
-      abilities: defaultAbilities,
-      players: [],
-      leaderboard: []
-    };
+    return defaultGameState;
   });
 
   const { toast } = useToast();

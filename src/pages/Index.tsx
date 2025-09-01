@@ -118,8 +118,8 @@ const Index = () => {
       
       case 'tours':
         return (
-          <TourRoom 
-            tours={tourResults}
+          <TourRoom
+            tours={tourResults ?? []}
             worm={worm}
             onStartTour={startTour}
             isTourAvailable={isTourAvailable}
