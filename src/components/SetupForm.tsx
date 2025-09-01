@@ -7,25 +7,32 @@ import { PlayerClass } from '../types/game';
 import { ClassSelector } from './ClassSelector';
 
 interface SetupFormProps {
-  onCreateWorm: (username: string, wormName: string, playerClass: PlayerClass) => void;
+  onRegister: (
+    username: string,
+    password: string,
+    wormName: string,
+    playerClass: PlayerClass
+  ) => void;
+  onSwitchToLogin: () => void;
 }
 
-export const SetupForm = ({ onCreateWorm }: SetupFormProps) => {
+export const SetupForm = ({ onRegister, onSwitchToLogin }: SetupFormProps) => {
   const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [wormName, setWormName] = useState('');
   const [selectedClass, setSelectedClass] = useState<PlayerClass | null>(null);
   const [step, setStep] = useState<'profile' | 'class'>('profile');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (username.trim() && wormName.trim()) {
+    if (username.trim() && password.trim() && wormName.trim()) {
       setStep('class');
     }
   };
 
   const handleClassConfirm = () => {
     if (selectedClass) {
-      onCreateWorm(username.trim(), wormName.trim(), selectedClass);
+      onRegister(username.trim(), password.trim(), wormName.trim(), selectedClass);
     }
   };
 
@@ -61,6 +68,18 @@ export const SetupForm = ({ onCreateWorm }: SetupFormProps) => {
                     className="transition-smooth"
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password">Jelszó</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Adj meg egy jelszót..."
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="transition-smooth"
+                  />
+                </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="wormName">Kukac neve</Label>
@@ -89,25 +108,31 @@ export const SetupForm = ({ onCreateWorm }: SetupFormProps) => {
                   </div>
                 </div>
                 
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="w-full text-lg py-6 transition-bounce bg-gradient-worm hover:shadow-worm"
-                  disabled={!username.trim() || !wormName.trim()}
+                  disabled={!username.trim() || !password.trim() || !wormName.trim()}
                 >
                   🎉 Következő: Osztály Választás
                 </Button>
               </form>
-              
+
               <div className="text-center text-sm text-muted-foreground">
                 <p>
                   🎮 Növeld a kukacod statjait tréninggel<br/>
                   💼 Végezz munkákat érmékért<br/>
                   🏆 Versenyzz a ranglistán
                 </p>
+                <button
+                  onClick={onSwitchToLogin}
+                  className="text-primary underline mt-2"
+                >
+                  Már van fiókod? Bejelentkezés
+                </button>
               </div>
             </>
           ) : (
-            <ClassSelector 
+            <ClassSelector
               selectedClass={selectedClass}
               onSelectClass={setSelectedClass}
               onConfirm={handleClassConfirm}

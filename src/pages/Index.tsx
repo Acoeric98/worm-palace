@@ -5,6 +5,7 @@ import { Dashboard } from '../components/Dashboard';
 import { TrainingRoom } from '../components/TrainingRoom';
 import { JobBoard } from '../components/JobBoard';
 import { SetupForm } from '../components/SetupForm';
+import { LoginForm } from '../components/LoginForm';
 import { ProfileEditor } from '../components/ProfileEditor';
 import { Shop } from '../components/Shop';
 import { Inventory } from '../components/Inventory';
@@ -16,9 +17,11 @@ type Page = 'dashboard' | 'training' | 'jobs' | 'profile' | 'shop' | 'inventory'
 
 const Index = () => {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const {
     gameState,
-    createUserAndWorm,
+    registerUser,
+    loginUser,
     executeTrain,
     acceptJob,
     completeJob,
@@ -39,15 +42,25 @@ const Index = () => {
     isLoggedIn
   } = useGameData();
 
-  // If no user/worm exists, show setup form
+  // If no user/worm exists, show auth forms
   if (!isLoggedIn) {
-    return <SetupForm onCreateWorm={createUserAndWorm} />;
+    return authMode === 'login' ? (
+      <LoginForm
+        onLogin={loginUser}
+        onSwitchToRegister={() => setAuthMode('register')}
+      />
+    ) : (
+      <SetupForm
+        onRegister={registerUser}
+        onSwitchToLogin={() => setAuthMode('login')}
+      />
+    );
   }
 
   const { user, worm, trainings, jobs, jobAssignments, inventory, shopItems, tourResults, battles, players, abilities } = gameState;
   
   if (!worm) {
-    return <SetupForm onCreateWorm={createUserAndWorm} />;
+    return null;
   }
 
   const renderPage = () => {
