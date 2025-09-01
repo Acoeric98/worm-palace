@@ -19,7 +19,7 @@ export const JobBoard = ({ jobs, assignments, worm, onAcceptJob, onCompleteJob }
     const interval = setInterval(() => {
       const newTimeRemaining: Record<string, number> = {};
       
-      assignments.forEach(assignment => {
+      (assignments || []).forEach(assignment => {
         if (assignment.status === 'accepted') {
           const job = jobs.find(j => j.id === assignment.jobId);
           if (job) {
@@ -57,12 +57,12 @@ export const JobBoard = ({ jobs, assignments, worm, onAcceptJob, onCompleteJob }
     }
     
     // Check if already accepted
-    const activeAssignment = assignments.find(a => a.jobId === job.id && a.status === 'accepted');
+    const activeAssignment = (assignments || []).find(a => a.jobId === job.id && a.status === 'accepted');
     if (activeAssignment) return false;
     
     // Check daily limit
     const today = new Date().toDateString();
-    const todayAssignments = assignments.filter(a => 
+    const todayAssignments = (assignments || []).filter(a => 
       new Date(a.startedAt).toDateString() === today
     );
     if (todayAssignments.length >= DAILY_JOB_LIMIT) return false;
@@ -71,11 +71,11 @@ export const JobBoard = ({ jobs, assignments, worm, onAcceptJob, onCompleteJob }
   };
 
   const getJobAssignment = (jobId: string) => {
-    return assignments.find(a => a.jobId === jobId && a.status === 'accepted');
+    return (assignments || []).find(a => a.jobId === jobId && a.status === 'accepted');
   };
 
   const today = new Date().toDateString();
-  const todayJobsCount = assignments.filter(a => 
+  const todayJobsCount = (assignments || []).filter(a => 
     new Date(a.startedAt).toDateString() === today
   ).length;
 
@@ -94,11 +94,11 @@ export const JobBoard = ({ jobs, assignments, worm, onAcceptJob, onCompleteJob }
       </div>
 
       {/* Active Jobs */}
-      {assignments.filter(a => a.status === 'accepted').length > 0 && (
+      {(assignments || []).filter(a => a.status === 'accepted').length > 0 && (
         <div className="space-y-4">
           <h3 className="text-xl font-semibold text-primary">🔄 Folyamatban lévő munkák</h3>
           <div className="grid gap-4 md:grid-cols-2">
-            {assignments
+            {(assignments || [])
               .filter(a => a.status === 'accepted')
               .map(assignment => {
                 const job = jobs.find(j => j.id === assignment.jobId);

@@ -12,7 +12,7 @@ interface DashboardProps {
 }
 
 export const Dashboard = ({ worm, assignments, jobs, onNavigate, onCompleteJob }: DashboardProps) => {
-  const activeAssignments = assignments.filter(a => a.status === 'accepted');
+  const activeAssignments = (assignments || []).filter(a => a.status === 'accepted');
   const completableJobs = activeAssignments.filter(assignment => {
     const job = jobs.find(j => j.id === assignment.jobId);
     if (!job) return false;

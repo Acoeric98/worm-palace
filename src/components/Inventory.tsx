@@ -38,11 +38,11 @@ export const Inventory = ({
   const getInventoryItem = (itemId: string) =>
     inventory.find(inv => inv.itemId === itemId);
 
-  const consumableItems = inventory
+  const consumableItems = (inventory || [])
     .map(inv => ({ ...inv, item: getItemDetails(inv.itemId) }))
     .filter(inv => inv.item?.type === 'consumable');
 
-  const equipmentItems = inventory
+  const equipmentItems = (inventory || [])
     .map(inv => ({ ...inv, item: getItemDetails(inv.itemId) }))
     .filter(inv => inv.item?.type === 'equipment');
 

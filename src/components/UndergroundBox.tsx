@@ -28,13 +28,13 @@ export const UndergroundBox = ({
   const handleSearch = () => {
     if (!searchName.trim()) return;
     
-    const player = players.find(p => 
+    const player = (players || []).find(p => 
       p.name.toLowerCase().includes(searchName.toLowerCase()) && p.id !== worm.id
     );
     setFoundPlayer(player || null);
   };
 
-  const pendingBattles = battles.filter(b => b.status === 'pending');
+  const pendingBattles = (battles || []).filter(b => b.status === 'pending');
 
   return (
     <div className="space-y-6">
@@ -166,7 +166,7 @@ export const UndergroundBox = ({
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {players
+            {(players || [])
               .sort((a, b) => (b.wins - b.losses) - (a.wins - a.losses))
               .slice(0, 10)
               .map((player, index) => (

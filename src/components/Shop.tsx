@@ -35,8 +35,8 @@ export const Shop = ({ items, worm, onBuyItem }: ShopProps) => {
   const canAfford = (item: Item) => worm.coins >= item.price;
   const canUse = (item: Item) => !item.level || worm.level >= item.level;
 
-  const consumables = items.filter(item => item.type === 'consumable');
-  const equipment = items.filter(item => item.type === 'equipment');
+  const consumables = (items || []).filter(item => item.type === 'consumable');
+  const equipment = (items || []).filter(item => item.type === 'equipment');
 
   return (
     <div className="space-y-6">
@@ -101,8 +101,8 @@ export const Shop = ({ items, worm, onBuyItem }: ShopProps) => {
                             <span className="text-green-500">+{item.effects.mood}</span>
                           </div>
                         )}
-                        {Object.entries(item.effects).filter(([key]) => 
-                          ['strength', 'agility', 'endurance', 'stamina', 'intelligence', 'charisma'].includes(key)
+                        {Object.entries(item.effects || {}).filter(([key]) => 
+                          ['strength', 'dexterity', 'endurance', 'stamina', 'intelligence', 'charisma'].includes(key)
                         ).map(([stat, value]) => (
                           <div key={stat} className="flex justify-between">
                             <span>{stat === 'strength' ? 'Erő' : 
