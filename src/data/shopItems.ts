@@ -165,7 +165,10 @@ export const equipmentTemplates = {
 };
 
 // Generate random equipment item
-export const generateRandomEquipment = (tier: 'low' | 'mid-bottom' | 'mid-top' | 'high-bottom' | 'high-middle' | 'high-top'): Item => {
+export const generateRandomEquipment = (
+  tier: 'low' | 'mid-bottom' | 'mid-top' | 'high-bottom' | 'high-middle' | 'high-top',
+  subType: 'helmet' | 'armor' | 'weapon' | 'accessory'
+): Item => {
   // Determine rarity based on tier
   let rarity: 'common' | 'rare' | 'epic' | 'legendary';
   let statMultiplier: number;
@@ -204,36 +207,28 @@ export const generateRandomEquipment = (tier: 'low' | 'mid-bottom' | 'mid-top' |
       break;
   }
 
-  // Choose equipment type
-  const equipmentTypes = ['helmet', 'armor', 'accessory', 'weapon'];
-  const equipmentType = equipmentTypes[Math.floor(Math.random() * equipmentTypes.length)];
-
+  // Choose template based on subtype
   let template: { nameHu: string; icon: string };
-  let subType: string;
 
-  switch (equipmentType) {
+  switch (subType) {
     case 'helmet':
       template = equipmentTemplates.helmets[Math.floor(Math.random() * equipmentTemplates.helmets.length)];
-      subType = 'helmet';
       break;
     case 'armor':
       template = equipmentTemplates.chestpieces[Math.floor(Math.random() * equipmentTemplates.chestpieces.length)];
-      subType = 'armor';
       break;
     case 'accessory':
       template = equipmentTemplates.gloves[Math.floor(Math.random() * equipmentTemplates.gloves.length)];
-      subType = 'accessory';
       break;
-    case 'weapon':
+    case 'weapon': {
       const weaponTypes = Object.keys(equipmentTemplates.weapons);
       const weaponType = weaponTypes[Math.floor(Math.random() * weaponTypes.length)];
-      const weaponArray = equipmentTemplates.weapons[weaponType as keyof typeof equipmentTemplates.weapons];
+      const weaponArray = equipmentTemplates.weapons[
+        weaponType as keyof typeof equipmentTemplates.weapons
+      ];
       template = weaponArray[Math.floor(Math.random() * weaponArray.length)];
-      subType = 'weapon';
       break;
-    default:
-      template = equipmentTemplates.helmets[0];
-      subType = 'helmet';
+    }
   }
 
   // Generate random stats
@@ -263,7 +258,7 @@ export const generateRandomEquipment = (tier: 'low' | 'mid-bottom' | 'mid-top' |
     description: `A ${rarity} piece of equipment found during exploration.`,
     descriptionHu: `Egy ${rarity === 'common' ? 'közönséges' : rarity === 'rare' ? 'ritka' : rarity === 'epic' ? 'epikus' : 'legendás'} felszerelés, amit felfedezés során találtak.`,
     type: 'equipment',
-    subType: subType as any,
+    subType,
     price: Math.floor(level * 50 * (rarity === 'common' ? 1 : rarity === 'rare' ? 2 : rarity === 'epic' ? 4 : 8)),
     rarity,
     icon: template.icon,
