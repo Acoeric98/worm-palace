@@ -58,6 +58,10 @@ const createInitialUser = (username: string): User => ({
   createdAt: Date.now()
 });
 
+const randomEquipmentSubType = () => (
+  ['helmet', 'armor', 'weapon', 'accessory'] as const
+)[Math.floor(Math.random() * 4)];
+
 export const useGameData = () => {
   const [gameState, setGameState] = useState<GameState>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -603,7 +607,7 @@ export const useGameData = () => {
 
   // Get total stats including equipment bonuses
   const getTotalStats = (worm: Worm) => {
-    let totalStats = {
+    const totalStats = {
       strength: worm.strength,
       dexterity: worm.dexterity,
       endurance: worm.endurance,
@@ -699,7 +703,7 @@ export const useGameData = () => {
                         tour.tier === 'high-middle' ? 0.7 : 0.8;
 
       if (Math.random() < dropChance) {
-        rewardItem = generateRandomEquipment(tour.tier);
+        rewardItem = generateRandomEquipment(tour.tier, randomEquipmentSubType());
       }
 
       const updatedInventory = rewardItem 
@@ -774,7 +778,7 @@ export const useGameData = () => {
                         difficulty === 'hard' ? 0.75 : 0.9;
 
       if (Math.random() < dropChance) {
-        rewardItem = generateRandomEquipment(dungeon.tier);
+        rewardItem = generateRandomEquipment(dungeon.tier, randomEquipmentSubType());
       }
 
       const updatedWorm = {
@@ -841,11 +845,11 @@ export const useGameData = () => {
 
       // Always drop equipment from raids, chance for multiple items
       const rewards: Item[] = [];
-      rewards.push(generateRandomEquipment('high-middle')); // Guaranteed high-tier item
+      rewards.push(generateRandomEquipment('high-middle', randomEquipmentSubType())); // Guaranteed high-tier item
       
       // 50% chance for second item
       if (Math.random() < 0.5) {
-        rewards.push(generateRandomEquipment('high-bottom'));
+        rewards.push(generateRandomEquipment('high-bottom', randomEquipmentSubType()));
       }
 
       const updatedWorm = {
@@ -912,7 +916,7 @@ export const useGameData = () => {
       // 70% chance for equipment
       let rewardItem: Item | null = null;
       if (Math.random() < 0.7) {
-        rewardItem = generateRandomEquipment('mid-top');
+        rewardItem = generateRandomEquipment('mid-top', randomEquipmentSubType());
       }
 
       const updatedWorm = {
