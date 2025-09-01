@@ -40,7 +40,6 @@ Alternatív: ha `npm`/`pnpm` jobban kézre áll, használd a package.json script
 
 A kliens a `VITE_API_URL` környezeti változóval konfigurálható hitelesítési API
 címet vár. Alapértelmezetten a `http://localhost:3001` címre küld kéréseket.
-
 ## 3) Struktúra (kivonat)
 
 ```

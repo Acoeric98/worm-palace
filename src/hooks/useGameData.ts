@@ -153,31 +153,54 @@ export const useGameData = () => {
 
     setGameState(newState);
 
-    await fetch(`${API_URL}/api/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password, data: newState })
-    });
+    try {
+      const res = await fetch(`${API_URL}/api/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, data: newState })
+      });
 
-    toast({
-      title: "Üdvözöllek!",
-      description: `${wormName} kukac sikeresen létrehozva!`
-    });
+      if (!res.ok) {
+        throw new Error('Registration failed');
+      }
+
+      toast({
+        title: "Üdvözöllek!",
+        description: `${wormName} kukac sikeresen létrehozva!`
+      });
+    } catch (err) {
+      console.error('Failed to register user', err);
+      toast({
+        title: 'Hiba',
+        description: 'Nem sikerült csatlakozni a szerverhez.',
+        variant: 'destructive'
+      });
+    }
   };
 
   const loginUser = async (username: string, password: string) => {
-    const res = await fetch(`${API_URL}/api/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setGameState({ ...defaultGameState, ...data });
-    } else {
+    try {
+      const res = await fetch(`${API_URL}/api/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setGameState({ ...defaultGameState, ...data });
+      } else {
+        toast({
+          title: 'Hiba',
+          description: 'Érvénytelen belépési adatok',
+          variant: 'destructive'
+        });
+      }
+    } catch (err) {
+      console.error('Failed to login user', err);
       toast({
         title: 'Hiba',
-        description: 'Érvénytelen belépési adatok',
+        description: 'Nem sikerült csatlakozni a szerverhez.',
         variant: 'destructive'
       });
     }
