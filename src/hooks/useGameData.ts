@@ -61,7 +61,15 @@ const createInitialUser = (username: string): User => ({
 export const useGameData = () => {
   const [gameState, setGameState] = useState<GameState>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : {
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch (error) {
+        console.warn('Failed to parse game data from localStorage', error);
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+    return {
       user: null,
       worm: null,
       trainings: defaultTrainings,
