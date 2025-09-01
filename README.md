@@ -38,8 +38,8 @@ Alternatív: ha `npm`/`pnpm` jobban kézre áll, használd a package.json script
 
 ### API szerver
 
-A kliens a `VITE_API_URL` környezeti változóval konfigurálható hitelesítési API
-címet vár. Alapértelmezetten a `http://localhost:3001` címre küld kéréseket.
+A kliens a `VITE_API_BASE` környezeti változóval konfigurálható hitelesítési API
+címet vár. Alapértelmezetten ugyanazon originre küld kéréseket, azaz `/api/...` útvonalra.
 ## 3) Struktúra (kivonat)
 
 ```

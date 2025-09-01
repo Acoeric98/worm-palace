@@ -12,7 +12,7 @@ interface SetupFormProps {
     password: string,
     wormName: string,
     playerClass: PlayerClass
-  ) => void;
+  ) => Promise<void>;
   onSwitchToLogin: () => void;
 }
 
@@ -22,17 +22,37 @@ export const SetupForm = ({ onRegister, onSwitchToLogin }: SetupFormProps) => {
   const [wormName, setWormName] = useState('');
   const [selectedClass, setSelectedClass] = useState<PlayerClass | null>(null);
   const [step, setStep] = useState<'profile' | 'class'>('profile');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (username.trim() && password.trim() && wormName.trim()) {
-      setStep('class');
+    setError(null);
+    if (username.trim().length < 3) {
+      setError('Felhasználónév túl rövid (min 3).');
+      return;
     }
+    if (password.trim().length < 6) {
+      setError('Jelszó túl rövid (min 6).');
+      return;
+    }
+    if (!wormName.trim()) {
+      setError('Adj nevet a kukacodnak.');
+      return;
+    }
+    setStep('class');
   };
 
-  const handleClassConfirm = () => {
-    if (selectedClass) {
-      onRegister(username.trim(), password.trim(), wormName.trim(), selectedClass);
+  const handleClassConfirm = async () => {
+    if (!selectedClass) return;
+    setError(null);
+    setLoading(true);
+    try {
+      await onRegister(username.trim(), password, wormName.trim(), selectedClass);
+    } catch (err: any) {
+      setError(err?.message || 'Registration failed');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -54,6 +74,9 @@ export const SetupForm = ({ onRegister, onSwitchToLogin }: SetupFormProps) => {
         </CardHeader>
         
         <CardContent className="space-y-6">
+          {error && (
+            <p role="alert" className="text-red-600 text-sm text-center">{error}</p>
+          )}
           {step === 'profile' ? (
             <>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -136,6 +159,7 @@ export const SetupForm = ({ onRegister, onSwitchToLogin }: SetupFormProps) => {
               selectedClass={selectedClass}
               onSelectClass={setSelectedClass}
               onConfirm={handleClassConfirm}
+              loading={loading}
             />
           )}
         </CardContent>
