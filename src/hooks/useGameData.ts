@@ -404,7 +404,6 @@ export const useGameData = () => {
     };
 
     // Daily counter for mood penalty
-    const today = new Date().toDateString();
     const jobCounter = worm.dailyCounters[`job_${jobId}`];
     const jobCount = jobCounter?.date === today ? jobCounter.count : 0;
     const moodPenalty = 5 + jobCount * 2;
