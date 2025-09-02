@@ -28,3 +28,16 @@ export async function loginUser<T = unknown>(body: LoginBody): Promise<T> {
     body: JSON.stringify(body)
   });
 }
+
+export interface SaveBody {
+  username: string;
+  password: string;
+  data: Record<string, unknown>;
+}
+
+export async function saveUser(body: SaveBody): Promise<RegisterResponse> {
+  return apiFetch<RegisterResponse>("/api/save", {
+    method: "POST",
+    body: JSON.stringify(body)
+  });
+}

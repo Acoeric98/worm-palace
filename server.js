@@ -287,6 +287,63 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
+    // Save user data
+    if (pathname === '/api/save' && req.method === 'POST') {
+      try {
+        const { username = '', password = '', data = {} } = await readJson(req);
+
+        if (!username || !password) {
+          return sendJson(res, 400, { message: 'Missing username or password' });
+        }
+
+        let user;
+        try {
+          user = await readUser(username);
+        } catch (err) {
+          console.error('[SAVE] readUser error:', err);
+          if (err.code === 'INVALID_JSON') {
+            return sendJson(res, 500, { message: 'Corrupted user data' });
+          }
+          if (err.code === 'USER_DATA_INACCESSIBLE') {
+            return sendJson(res, 500, debugPayload({ message: 'User storage not accessible' }, err));
+          }
+          throw err;
+        }
+
+        if (!user) {
+          return sendJson(res, 404, { message: 'User not found' });
+        }
+        if (user.passwordHash !== hashPassword(password)) {
+          return sendJson(res, 401, { message: 'Invalid credentials' });
+        }
+
+        if (typeof data !== 'object' || Array.isArray(data)) {
+          return sendJson(res, 400, { message: 'Invalid data object' });
+        }
+
+        try {
+          await writeUser(username, { passwordHash: user.passwordHash, data });
+        } catch (werr) {
+          console.error('[SAVE] writeUser error:', werr);
+          return sendJson(res, 500, debugPayload({ message: 'Failed to persist user' }, werr));
+        }
+
+        return sendJson(res, 200, { status: 'ok' });
+      } catch (e) {
+        console.error('SAVE CATCH:', e && e.stack || e);
+        if (e.code === 'UNSUPPORTED_MEDIA_TYPE') {
+          return sendJson(res, 415, debugPayload({ message: 'Unsupported media type (expect application/json)' }, e));
+        }
+        if (e.code === 'PAYLOAD_TOO_LARGE') {
+          return sendJson(res, 413, debugPayload({ message: 'Payload too large' }, e));
+        }
+        if (e.code === 'INVALID_JSON' || e.message === 'INVALID_JSON') {
+          return sendJson(res, 400, { message: 'Invalid JSON' });
+        }
+        return sendJson(res, 400, debugPayload({ message: 'Invalid body' }, e));
+      }
+    }
+
     // Backup
     if (pathname === '/api/backup' && req.method === 'POST') {
       try {
