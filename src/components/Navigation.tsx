@@ -5,9 +5,10 @@ interface NavigationProps {
   currentPage: 'dashboard' | 'training' | 'jobs' | 'profile' | 'shop' | 'inventory' | 'tours' | 'pvp' | 'pve';
   onNavigate: (page: 'dashboard' | 'training' | 'jobs' | 'profile' | 'shop' | 'inventory' | 'tours' | 'pvp' | 'pve') => void;
   coins: number;
+  onLogout: () => void;
 }
 
-export const Navigation = ({ currentPage, onNavigate, coins }: NavigationProps) => {
+export const Navigation = ({ currentPage, onNavigate, coins, onLogout }: NavigationProps) => {
   const navItems = [
     { id: 'dashboard', label: 'Vezérlőpult', icon: '🏠' },
     { id: 'training', label: 'Tréning', icon: '💪' },
@@ -50,6 +51,14 @@ export const Navigation = ({ currentPage, onNavigate, coins }: NavigationProps) 
                 <span className="hidden sm:inline">{item.label}</span>
               </Button>
             ))}
+            <Button
+              variant="outline"
+              onClick={onLogout}
+              className="flex items-center gap-2 transition-bounce"
+            >
+              <span className="text-lg">🚪</span>
+              <span className="hidden sm:inline">Kijelentkezés</span>
+            </Button>
           </div>
         </div>
       </div>

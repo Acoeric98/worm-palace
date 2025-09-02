@@ -141,6 +141,9 @@ export const useGameData = () => {
     wormName: string,
     playerClass: PlayerClass
   ) => {
+    // Clear any previously cached game state to avoid leaking data between users
+    localStorage.removeItem(STORAGE_KEY);
+
     const user = createInitialUser(username);
     const worm = createInitialWorm(wormName, playerClass);
 
@@ -171,6 +174,9 @@ export const useGameData = () => {
 
   const loginUser = async (username: string, password: string) => {
     try {
+      // Ensure old cached data doesn't persist when switching accounts
+      localStorage.removeItem(STORAGE_KEY);
+
       const data = await apiLoginUser<GameState>({ username, password });
       setGameState({ ...defaultGameState, ...data });
     } catch (err) {
@@ -994,6 +1000,11 @@ export const useGameData = () => {
     return level;
   };
 
+  const logout = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setGameState(defaultGameState);
+  };
+
   return {
     gameState,
     registerUser,
@@ -1015,6 +1026,7 @@ export const useGameData = () => {
     startDungeon,
     startRaid,
     startAdventure,
-    isLoggedIn: !!gameState.user && !!gameState.worm
+    isLoggedIn: !!gameState.user && !!gameState.worm,
+    logout
   };
 };
