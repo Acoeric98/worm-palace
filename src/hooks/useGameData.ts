@@ -99,6 +99,21 @@ export const useGameData = () => {
   const { toast } = useToast();
   const { registerUser: authRegisterUser, loginUser: authLoginUser, saveGame, logout: authLogout } = useAuth();
 
+  const fetchMarketListings = useCallback(async () => {
+    try {
+      const res = await fetch('/api/market');
+      if (!res.ok) return;
+      const data = await res.json();
+      setGameState(prev => ({ ...prev, marketListings: data.listings || [] }));
+    } catch (err) {
+      console.error('Failed to fetch market', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchMarketListings();
+  }, [fetchMarketListings]);
+
   // Save to localStorage whenever gameState changes
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
@@ -735,7 +750,7 @@ export const useGameData = () => {
     toast({ title: 'Eladva!', description: `${item.nameHu} eladva ${price} érméért.` });
   };
 
-  const listItemForSale = (itemId: string, price: number) => {
+  const listItemForSale = async (itemId: string, price: number) => {
     const inventoryItem = gameState.inventory.find(inv => inv.itemId === itemId);
     const item = gameState.shopItems.find(i => i.id === itemId);
     if (!inventoryItem || !item || !gameState.user) return;
@@ -746,23 +761,28 @@ export const useGameData = () => {
           inv.itemId === itemId ? { ...inv, quantity: inv.quantity - 1 } : inv
         );
 
-    const listing = {
-      id: Date.now().toString(),
-      itemId,
-      seller: gameState.user.username,
-      price,
-    };
-
-    setGameState(prev => ({
-      ...prev,
-      inventory: updatedInventory,
-      marketListings: [...prev.marketListings, listing],
-    }));
-
-    toast({ title: 'Piacra téve!', description: `${item.nameHu} listázva ${price} érméért.` });
+    try {
+      const res = await fetch('/api/market/list', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemId, price, seller: gameState.user.username }),
+      });
+      if (!res.ok) throw new Error('Failed to list');
+      const data = await res.json();
+      const listing = data.listing;
+      setGameState(prev => ({
+        ...prev,
+        inventory: updatedInventory,
+        marketListings: [...prev.marketListings, listing],
+      }));
+      toast({ title: 'Piacra téve!', description: `${item.nameHu} listázva ${price} érméért.` });
+    } catch (err) {
+      console.error('Failed to list item', err);
+      toast({ title: 'Hiba', description: 'Nem sikerült feltölteni a piacra.', variant: 'destructive' });
+    }
   };
 
-  const buyListing = (listingId: string) => {
+  const buyListing = async (listingId: string) => {
     const listing = gameState.marketListings.find(l => l.id === listingId);
     if (!listing || !gameState.worm) return;
     if (listing.price > gameState.worm.coins) {
@@ -786,16 +806,24 @@ export const useGameData = () => {
       lastUpdated: Date.now(),
     };
 
-    const updatedListings = gameState.marketListings.filter(l => l.id !== listingId);
-
-    setGameState(prev => ({
-      ...prev,
-      worm: updatedWorm,
-      inventory: updatedInventory,
-      marketListings: updatedListings,
-    }));
-
-    toast({ title: 'Vásárlás sikeres!', description: `${item.nameHu} megvásárolva.` });
+    try {
+      const res = await fetch('/api/market/remove', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listingId }),
+      });
+      if (!res.ok) throw new Error('Failed to remove');
+      setGameState(prev => ({
+        ...prev,
+        worm: updatedWorm,
+        inventory: updatedInventory,
+        marketListings: prev.marketListings.filter(l => l.id !== listingId),
+      }));
+      toast({ title: 'Vásárlás sikeres!', description: `${item.nameHu} megvásárolva.` });
+    } catch (err) {
+      console.error('Failed to buy listing', err);
+      toast({ title: 'Hiba', description: 'Nem sikerült megvásárolni a tárgyat.', variant: 'destructive' });
+    }
   };
 
   // Get total stats including equipment bonuses
