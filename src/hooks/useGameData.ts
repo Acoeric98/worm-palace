@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { GameState, Worm, User, Training, Job, JobAssignment, Item, InventoryItem, getXpRequiredForLevel, getDiminishingMultiplier, DAILY_JOB_LIMIT, TourResult, Battle, PlayerClass } from '../types/game';
 import { defaultTrainings } from '../data/trainings';
 import { defaultJobs } from '../data/jobs';
@@ -7,7 +7,7 @@ import { defaultTours } from '../data/tours';
 import { defaultAbilities } from '../data/abilities';
 import { useToast } from './use-toast';
 import defaultWormImage from '../assets/default-worm.png';
-import { registerUser as apiRegisterUser, loginUser as apiLoginUser } from '@/services/auth';
+import { registerUser as apiRegisterUser, loginUser as apiLoginUser, saveUser as apiSaveUser } from '@/services/auth';
 
 const STORAGE_KEY = 'worm-daycare-data';
 
@@ -96,10 +96,30 @@ export const useGameData = () => {
 
   const { toast } = useToast();
 
+  const credentialsRef = useRef<{ username: string; password: string } | null>(null);
+
+  const saveGame = useCallback(async (state: GameState = gameState) => {
+    const creds = credentialsRef.current;
+    if (!creds) return;
+    try {
+      await apiSaveUser({ username: creds.username, password: creds.password, data: state });
+    } catch (err) {
+      console.error('Failed to save game state', err);
+    }
+  }, [gameState]);
+
   // Save to localStorage whenever gameState changes
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
   }, [gameState]);
+
+  // Periodically save to server every 5 minutes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      saveGame();
+    }, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [saveGame]);
 
   // Energy regeneration system
   useEffect(() => {
@@ -154,6 +174,7 @@ export const useGameData = () => {
     };
 
     setGameState(newState);
+    credentialsRef.current = { username, password };
 
     try {
       await apiRegisterUser({ username, password, data: newState });
@@ -178,6 +199,7 @@ export const useGameData = () => {
       localStorage.removeItem(STORAGE_KEY);
 
       const data = await apiLoginUser<GameState>({ username, password });
+      credentialsRef.current = { username, password };
       setGameState({ ...defaultGameState, ...data });
     } catch (err) {
       console.error('Failed to login user', err);
@@ -1001,6 +1023,8 @@ export const useGameData = () => {
   };
 
   const logout = () => {
+    void saveGame();
+    credentialsRef.current = null;
     localStorage.removeItem(STORAGE_KEY);
     setGameState(defaultGameState);
   };
