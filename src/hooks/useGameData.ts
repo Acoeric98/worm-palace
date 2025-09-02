@@ -273,12 +273,16 @@ export const useGameData = () => {
     const actualStatGain = Math.floor(training.statGain * multiplier);
     const actualXpGain = Math.floor(training.xpGain * multiplier);
 
+    // Mood penalty increases with repeated trainings
+    const moodPenalty = 5 + todayCount * 2;
+
     // Update worm
     const updatedWorm: Worm = {
       ...worm,
       energy: worm.energy - training.energyCost,
       coins: worm.coins - (training.coinCost || 0),
       xp: worm.xp + actualXpGain,
+      mood: Math.max(0, worm.mood - moodPenalty),
       [training.statFocus]: worm[training.statFocus] + actualStatGain,
       cooldowns: {
         ...worm.cooldowns,
@@ -399,13 +403,24 @@ export const useGameData = () => {
       startedAt: Date.now(),
     };
 
-    // Deduct energy immediately
+    // Daily counter for mood penalty
+    const today = new Date().toDateString();
+    const jobCounter = worm.dailyCounters[`job_${jobId}`];
+    const jobCount = jobCounter?.date === today ? jobCounter.count : 0;
+    const moodPenalty = 5 + jobCount * 2;
+
+    // Deduct energy immediately and apply mood change
     const updatedWorm: Worm = {
       ...worm,
       energy: worm.energy - job.energyCost,
+      mood: Math.max(0, worm.mood - moodPenalty),
       currentActivity: {
         type: 'job',
         endsAt: Date.now() + job.durationMinutes * 60 * 1000
+      },
+      dailyCounters: {
+        ...worm.dailyCounters,
+        [`job_${jobId}`]: { date: today, count: jobCount + 1 }
       },
       lastUpdated: Date.now()
     };
@@ -873,12 +888,22 @@ export const useGameData = () => {
     setGameState(prev => {
       if (!prev.worm) return prev;
 
+      const today = new Date().toDateString();
+      const counter = prev.worm.dailyCounters[`tour_${tourId}`];
+      const count = counter?.date === today ? counter.count : 0;
+      const moodChange = 10 - count * 5;
+
       const updatedWorm = {
         ...prev.worm,
         energy: prev.worm.energy - tour.energyCost,
+        mood: Math.max(0, Math.min(100, prev.worm.mood + moodChange)),
         tourCooldowns: {
           ...prev.worm.tourCooldowns,
           [tourId]: Date.now() + (tour.duration * 60 * 1000) // Convert minutes to milliseconds
+        },
+        dailyCounters: {
+          ...prev.worm.dailyCounters,
+          [`tour_${tourId}`]: { date: today, count: count + 1 }
         },
         currentActivity: {
           type: 'tour',
@@ -1149,15 +1174,24 @@ export const useGameData = () => {
       }
 
       const adventureDurationMinutes = 20;
+      const today = new Date().toDateString();
+      const counter = prev.worm.dailyCounters['adventure'];
+      const count = counter?.date === today ? counter.count : 0;
+      const moodChange = 15 - count * 5;
 
       const updatedWorm = {
         ...prev.worm,
         energy: prev.worm.energy - 30,
         xp: newXp,
         level: newLevel,
+        mood: Math.max(0, Math.min(100, prev.worm.mood + moodChange)),
         currentActivity: {
           type: 'adventure',
           endsAt: Date.now() + adventureDurationMinutes * 60 * 1000
+        },
+        dailyCounters: {
+          ...prev.worm.dailyCounters,
+          adventure: { date: today, count: count + 1 }
         }
       };
 

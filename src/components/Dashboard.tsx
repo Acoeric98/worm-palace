@@ -23,6 +23,7 @@ export const Dashboard = ({ worm, assignments, jobs, onNavigate, onCompleteJob }
   });
 
   const [timeRemaining, setTimeRemaining] = useState<Record<string, number>>({});
+  const [activityRemaining, setActivityRemaining] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -37,14 +38,44 @@ export const Dashboard = ({ worm, assignments, jobs, onNavigate, onCompleteJob }
         }
       });
       setTimeRemaining(newTimeRemaining);
+
+      if (worm.currentActivity) {
+        const remaining = Math.max(0, worm.currentActivity.endsAt - Date.now());
+        setActivityRemaining(Math.ceil(remaining / 1000));
+      } else {
+        setActivityRemaining(0);
+      }
     }, 1000);
     return () => clearInterval(interval);
-  }, [activeAssignments, jobs]);
+  }, [activeAssignments, jobs, worm.currentActivity]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const getActivityLabel = (type: Worm['currentActivity']['type']): string => {
+    switch (type) {
+      case 'training':
+        return 'Tréning';
+      case 'job':
+        return 'Munka';
+      case 'tour':
+        return 'Túra';
+      case 'dungeon':
+        return 'Kazamata';
+      case 'raid':
+        return 'Raid';
+      case 'adventure':
+        return 'Kaland';
+      case 'pvp':
+        return 'PVP';
+      case 'pve':
+        return 'PVE';
+      default:
+        return 'Tevékenység';
+    }
   };
 
   const totalStats = worm.strength + worm.dexterity + worm.endurance + 
@@ -112,6 +143,20 @@ export const Dashboard = ({ worm, assignments, jobs, onNavigate, onCompleteJob }
           </CardContent>
         </Card>
       </div>
+
+      {worm.currentActivity && activityRemaining > 0 && (
+        <Card className="bg-muted/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span>⏳</span> Aktuális tevékenység
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex justify-between text-sm">
+            <span>{getActivityLabel(worm.currentActivity.type)}</span>
+            <span>{formatTime(activityRemaining)}</span>
+          </CardContent>
+        </Card>
+      )}
 
       {activeAssignments.length > 0 && (
         <Card className="bg-muted/50">
