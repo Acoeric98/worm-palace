@@ -1,18 +1,19 @@
+// server.js
 import http from 'http';
-import fs from 'fs';
 import fsp from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
 
+// ---------- Config ----------
 const USERS_DIR = path.join(process.cwd(), 'users');
 const BACKUP_DIR = path.join(process.cwd(), 'backup');
+const MAX_JSON_BYTES = 20 * 1024 * 1024;   // 20 MB request cap
+const DATA_MAX_BYTES = 256 * 1024;         // 256 KB limit for `data` field to avoid huge payloads
 
-const ensureDir = async (dir) => {
-  await fsp.mkdir(dir, { recursive: true });
-};
+// ---------- Utils ----------
+const ensureDir = async (dir) => fsp.mkdir(dir, { recursive: true });
 
-const getUserFile = (username) =>
-  path.join(USERS_DIR, `${username}.json`);
+const getUserFile = (username) => path.join(USERS_DIR, `${username}.json`);
 
 const readUser = async (username) => {
   try {
@@ -30,31 +31,24 @@ const readUser = async (username) => {
 };
 
 const writeUser = async (username, user) => {
-  await fsp.writeFile(
-    getUserFile(username),
-    JSON.stringify(user, null, 2),
-    'utf-8'
-  );
+  await fsp.writeFile(getUserFile(username), JSON.stringify(user, null, 2), 'utf-8');
 };
 
 const hashPassword = (password) =>
   crypto.createHash('sha256').update(password).digest('hex');
 
-const collectBody = (req) =>
-  new Promise((resolve) => {
-    let body = '';
-    req.on('data', (chunk) => {
-      body += chunk;
-    });
-    req.on('end', () => resolve(body));
-  });
+const sendJson = (res, status, payload) => {
+  res.writeHead(status, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify(payload));
+};
 
-
-async function readJson(req, maxBytes = 20_000_000) {
-  return new Promise((resolve, reject) => {
+const readJson = (req, maxBytes = MAX_JSON_BYTES) =>
+  new Promise((resolve, reject) => {
     const ct = req.headers['content-type'] || '';
     if (!ct.includes('application/json')) {
-      return reject(new Error('Invalid JSON'));
+      const e = new Error('UNSUPPORTED_MEDIA_TYPE');
+      e.code = 'UNSUPPORTED_MEDIA_TYPE';
+      return reject(e);
     }
 
     let size = 0;
@@ -63,8 +57,10 @@ async function readJson(req, maxBytes = 20_000_000) {
     req.on('data', (chunk) => {
       size += chunk.length;
       if (size > maxBytes) {
-        reject(new Error('Body too large'));
-        req.destroy(); // stop reading more data
+        const e = new Error('PAYLOAD_TOO_LARGE');
+        e.code = 'PAYLOAD_TOO_LARGE';
+        reject(e);
+        req.destroy();
         return;
       }
       chunks.push(chunk);
@@ -76,18 +72,22 @@ async function readJson(req, maxBytes = 20_000_000) {
         const data = raw ? JSON.parse(raw) : {};
         resolve(data);
       } catch {
-        reject(new Error('Invalid JSON'));
+        const e = new Error('INVALID_JSON');
+        e.code = 'INVALID_JSON';
+        reject(e);
       }
     });
 
     req.on('error', (e) => reject(e));
   });
-}
 
+// ---------- Server ----------
 const server = http.createServer(async (req, res) => {
+  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
     res.end();
@@ -95,94 +95,126 @@ const server = http.createServer(async (req, res) => {
   }
 
   await ensureDir(USERS_DIR);
- 
-  if (req.url === '/api/health' && req.method === 'GET') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ ok: true }));
-    return;
+  await ensureDir(BACKUP_DIR);
+
+  // Robust URL parsing (handles query strings)
+  const { pathname } = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+
+  // Health
+  if (pathname === '/api/health' && req.method === 'GET') {
+    return sendJson(res, 200, { ok: true });
   }
 
-  if (req.url === '/api/register' && req.method === 'POST') {
+  // Register
+  if (pathname === '/api/register' && req.method === 'POST') {
     try {
       const body = await readJson(req);
+
       const username = ((body.username ?? body.user) ?? '').toString().trim();
       const password = ((body.password ?? body.pass) ?? '').toString().trim();
       const data = body.data ?? {};
 
+      // Basic validation
       if (!username || !password) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ message: 'Missing username or password' }));
-        return;
+        return sendJson(res, 400, { message: 'Missing username or password' });
       }
-
       if (username.length < 3 || password.length < 3) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ message: 'Too short (min 3 chars)' }));
-        return;
+        return sendJson(res, 400, { message: 'Too short (min 3 chars)' });
       }
-
       if (!/^[\w.-]+$/.test(username)) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ message: 'Invalid username' }));
-        return;
+        return sendJson(res, 400, { message: 'Invalid username' });
+      }
+      if (typeof data !== 'object' || Array.isArray(data)) {
+        return sendJson(res, 400, { message: 'Invalid data object' });
+      }
+      // Optional: cap `data` size to avoid huge embedded game state on register
+      const dataSize = Buffer.byteLength(JSON.stringify(data), 'utf8');
+      if (dataSize > DATA_MAX_BYTES) {
+        return sendJson(res, 413, { message: 'Data too large' });
       }
 
-      if (await readUser(username)) {
-        res.writeHead(409, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ message: 'User already exists' }));
-        return;
+      // Read existing user, handle corrupted files distinctly
+      let existing = null;
+      try {
+        existing = await readUser(username);
+      } catch (err) {
+        if (err.code === 'INVALID_JSON' || err.message === 'INVALID_JSON') {
+          return sendJson(res, 409, { message: 'Corrupted existing user data' });
+        }
+        throw err;
+      }
+      if (existing) {
+        return sendJson(res, 409, { message: 'User already exists' });
       }
 
       const record = {
         passwordHash: hashPassword(password),
         data,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       };
 
       await writeUser(username, record);
-
-      res.writeHead(201, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ status: 'ok' }));
+      return sendJson(res, 201, { status: 'ok' });
     } catch (e) {
-      const msg = e && e.message ? e.message : 'Invalid body';
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(
-        JSON.stringify({ message: msg === 'Invalid JSON' ? 'Invalid JSON' : 'Invalid body' })
-      );
+      // Map known errors to clear HTTP statuses
+      if (e.code === 'UNSUPPORTED_MEDIA_TYPE') {
+        return sendJson(res, 415, { message: 'Unsupported media type (expect application/json)' });
+      }
+      if (e.code === 'PAYLOAD_TOO_LARGE') {
+        return sendJson(res, 413, { message: 'Payload too large' });
+      }
+      if (e.code === 'INVALID_JSON' || e.message === 'INVALID_JSON') {
+        return sendJson(res, 400, { message: 'Invalid JSON' });
+      }
+      console.error('REGISTER error:', e);
+      return sendJson(res, 400, { message: 'Invalid body' });
     }
-    return;
-  } else if (req.method === 'POST' && req.url === '/api/login') {
+  }
+
+  // Login
+  if (pathname === '/api/login' && req.method === 'POST') {
     try {
-      const body = await collectBody(req);
-      const { username, password } = JSON.parse(body);
+      const { username = '', password = '' } = await readJson(req);
+
+      if (!username || !password) {
+        return sendJson(res, 400, { message: 'Missing username or password' });
+      }
+
       let user;
       try {
         user = await readUser(username);
       } catch (err) {
         if (err.code === 'INVALID_JSON') {
-          res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ message: 'Corrupted user data' }));
-          return;
+          return sendJson(res, 500, { message: 'Corrupted user data' });
         }
         throw err;
       }
+
       if (!user) {
-        res.writeHead(404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ message: 'User not found' }));
-        return;
+        return sendJson(res, 404, { message: 'User not found' });
       }
       if (user.passwordHash !== hashPassword(password)) {
-        res.writeHead(401, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ message: 'Invalid credentials' }));
-        return;
+        return sendJson(res, 401, { message: 'Invalid credentials' });
       }
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(user.data));
-    } catch {
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ message: 'Invalid body' }));
+
+      return sendJson(res, 200, user.data);
+    } catch (e) {
+      if (e.code === 'UNSUPPORTED_MEDIA_TYPE') {
+        return sendJson(res, 415, { message: 'Unsupported media type (expect application/json)' });
+      }
+      if (e.code === 'PAYLOAD_TOO_LARGE') {
+        return sendJson(res, 413, { message: 'Payload too large' });
+      }
+      if (e.code === 'INVALID_JSON' || e.message === 'INVALID_JSON') {
+        return sendJson(res, 400, { message: 'Invalid JSON' });
+      }
+      console.error('LOGIN error:', e);
+      return sendJson(res, 400, { message: 'Invalid body' });
     }
-  } else if (req.method === 'POST' && req.url === '/api/backup') {
+  }
+
+  // Backup
+  if (pathname === '/api/backup' && req.method === 'POST') {
     try {
       await ensureDir(BACKUP_DIR);
       const files = await fsp.readdir(USERS_DIR);
@@ -190,19 +222,18 @@ const server = http.createServer(async (req, res) => {
         files
           .filter((f) => f.endsWith('.json'))
           .map((f) =>
-            fsp.copyFile(
-              path.join(USERS_DIR, f),
-              path.join(BACKUP_DIR, f)
-            )
+            fsp.copyFile(path.join(USERS_DIR, f), path.join(BACKUP_DIR, f))
           )
       );
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ status: 'ok' }));
-    } catch {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ message: 'Backup failed' }));
+      return sendJson(res, 200, { status: 'ok' });
+    } catch (e) {
+      console.error('BACKUP error:', e);
+      return sendJson(res, 500, { message: 'Backup failed' });
     }
-  } else if (req.method === 'POST' && req.url === '/api/restore') {
+  }
+
+  // Restore
+  if (pathname === '/api/restore' && req.method === 'POST') {
     try {
       const files = await fsp.readdir(BACKUP_DIR);
       await ensureDir(USERS_DIR);
@@ -210,26 +241,22 @@ const server = http.createServer(async (req, res) => {
         files
           .filter((f) => f.endsWith('.json'))
           .map((f) =>
-            fsp.copyFile(
-              path.join(BACKUP_DIR, f),
-              path.join(USERS_DIR, f)
-            )
+            fsp.copyFile(path.join(BACKUP_DIR, f), path.join(USERS_DIR, f))
           )
       );
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ status: 'ok' }));
-    } catch {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ message: 'Restore failed' }));
+      return sendJson(res, 200, { status: 'ok' });
+    } catch (e) {
+      console.error('RESTORE error:', e);
+      return sendJson(res, 500, { message: 'Restore failed' });
     }
-  } else {
-    res.writeHead(404, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ message: 'Not found' }));
   }
+
+  // Not found
+  return sendJson(res, 404, { message: 'Not found' });
 });
 
+// ---------- Boot ----------
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Auth server running on http://localhost:${PORT}`);
 });
-
