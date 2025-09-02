@@ -10,6 +10,7 @@ const BACKUP_DIR = path.join(process.cwd(), 'backup');
 const MAX_JSON_BYTES = 20 * 1024 * 1024;   // 20 MB
 const DATA_MAX_BYTES = 256 * 1024;         // cap for `data` field on register (tune or disable if needed)
 const DEV_DEBUG_RESPONSES = true;          // include error code/details in JSON responses (good for development)
+const USERNAME_REGEX = /^[A-Za-z0-9_]+$/;   // allowed characters for usernames
 
 // ---------- Utils ----------
 const ensureDir = async (dir) => {
@@ -166,7 +167,7 @@ const server = http.createServer(async (req, res) => {
         if (username.length < 3 || password.length < 3) {
           return sendJson(res, 400, { message: 'Too short (min 3 chars)' });
         }
-        if (!/^[\w.-]+$/.test(username)) {
+        if (!USERNAME_REGEX.test(username)) {
           return sendJson(res, 400, { message: 'Invalid username' });
         }
         if (typeof data !== 'object' || Array.isArray(data)) {
@@ -244,10 +245,15 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/api/login' && req.method === 'POST') {
       try {
         console.log('[LOGIN] start ct=', req.headers['content-type']);
-        const { username = '', password = '' } = await readJson(req);
+        const body = await readJson(req);
+        const username = (body.username ?? '').toString().trim();
+        const password = (body.password ?? '').toString().trim();
 
         if (!username || !password) {
           return sendJson(res, 400, { message: 'Missing username or password' });
+        }
+        if (!USERNAME_REGEX.test(username)) {
+          return sendJson(res, 400, { message: 'Invalid username' });
         }
 
         let user;
@@ -290,10 +296,16 @@ const server = http.createServer(async (req, res) => {
     // Save user data
     if (pathname === '/api/save' && req.method === 'POST') {
       try {
-        const { username = '', password = '', data = {} } = await readJson(req);
+        const body = await readJson(req);
+        const username = (body.username ?? '').toString().trim();
+        const password = (body.password ?? '').toString().trim();
+        const data = body.data ?? {};
 
         if (!username || !password) {
           return sendJson(res, 400, { message: 'Missing username or password' });
+        }
+        if (!USERNAME_REGEX.test(username)) {
+          return sendJson(res, 400, { message: 'Invalid username' });
         }
 
         let user;
