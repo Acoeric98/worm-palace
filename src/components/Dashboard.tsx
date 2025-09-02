@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { WormCard } from './WormCard';
@@ -20,6 +21,31 @@ export const Dashboard = ({ worm, assignments, jobs, onNavigate, onCompleteJob }
     const required = job.durationMinutes * 60 * 1000;
     return elapsed >= required;
   });
+
+  const [timeRemaining, setTimeRemaining] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const newTimeRemaining: Record<string, number> = {};
+      activeAssignments.forEach(assignment => {
+        const job = jobs.find(j => j.id === assignment.jobId);
+        if (job) {
+          const elapsed = Date.now() - assignment.startedAt;
+          const required = job.durationMinutes * 60 * 1000;
+          const remaining = Math.max(0, required - elapsed);
+          newTimeRemaining[assignment.id] = Math.ceil(remaining / 1000);
+        }
+      });
+      setTimeRemaining(newTimeRemaining);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [activeAssignments, jobs]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const totalStats = worm.strength + worm.dexterity + worm.endurance + 
                     worm.stamina + worm.intelligence + worm.charisma;
@@ -86,6 +112,29 @@ export const Dashboard = ({ worm, assignments, jobs, onNavigate, onCompleteJob }
           </CardContent>
         </Card>
       </div>
+
+      {activeAssignments.length > 0 && (
+        <Card className="bg-muted/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span>🕒</span> Folyamatban lévő munkák
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {activeAssignments.map(assignment => {
+              const job = jobs.find(j => j.id === assignment.jobId);
+              if (!job) return null;
+              const remaining = timeRemaining[assignment.id] || 0;
+              return (
+                <div key={assignment.id} className="flex justify-between text-sm">
+                  <span>{job.nameHu}</span>
+                  <span>{remaining > 0 ? formatTime(remaining) : 'Kész!'}</span>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Active jobs notification */}
       {completableJobs.length > 0 && (
