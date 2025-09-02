@@ -12,8 +12,9 @@ import { Inventory } from '../components/Inventory';
 import { TourRoom } from '../components/TourRoom';
 import { UndergroundBox } from '../components/UndergroundBox';
 import { PveArena } from '../components/PveArena';
+import { Market } from '../components/Market';
 
-type Page = 'dashboard' | 'training' | 'jobs' | 'profile' | 'shop' | 'inventory' | 'tours' | 'pvp' | 'pve';
+type Page = 'dashboard' | 'training' | 'jobs' | 'profile' | 'shop' | 'inventory' | 'tours' | 'pvp' | 'pve' | 'market';
 
 const Index = () => {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
@@ -33,6 +34,9 @@ const Index = () => {
     equipItem,
     unequipItem,
     getTotalStats,
+    sellItemToShop,
+    listItemForSale,
+    buyListing,
     isTourAvailable,
     getTourCooldown,
     startTour,
@@ -110,23 +114,35 @@ const Index = () => {
       
       case 'shop':
         return (
-          <Shop 
+          <Shop
             items={shopItems}
             worm={worm}
             onBuyItem={buyItem}
           />
         );
-      
+
       case 'inventory':
         return (
-          <Inventory 
+          <Inventory
             inventory={inventory}
             items={shopItems}
             worm={worm}
             onUseItem={useItem}
             onEquipItem={equipItem}
             onUnequipItem={unequipItem}
+            onListItem={listItemForSale}
+            onSellToShop={sellItemToShop}
             getTotalStats={getTotalStats}
+          />
+        );
+
+      case 'market':
+        return (
+          <Market
+            listings={gameState.marketListings}
+            items={shopItems}
+            worm={worm}
+            onBuy={buyListing}
           />
         );
       
