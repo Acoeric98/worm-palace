@@ -40,6 +40,9 @@ Alternatív: ha `npm`/`pnpm` jobban kézre áll, használd a package.json script
 
 A kliens a `VITE_API_BASE` környezeti változóval konfigurálható hitelesítési API
 címet vár. Alapértelmezetten ugyanazon originre küld kéréseket, azaz `/api/...` útvonalra.
+
+Illetve csatolva van a nginx config file "wormapp" névem, és a hozzá tartozó deploy fájl.
+
 ## 3) Struktúra (kivonat)
 
 ```
