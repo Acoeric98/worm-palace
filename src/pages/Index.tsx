@@ -39,7 +39,8 @@ const Index = () => {
     startDungeon,
     startRaid,
     startAdventure,
-    isLoggedIn
+    isLoggedIn,
+    logout
   } = useGameData();
 
   // If no user/worm exists, show auth forms
@@ -170,10 +171,11 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-card to-secondary">
       <div className="container mx-auto p-4 space-y-6">
-        <Navigation 
+        <Navigation
           currentPage={currentPage}
           onNavigate={setCurrentPage}
           coins={worm.coins}
+          onLogout={logout}
         />
         
         <main className="pb-8">
