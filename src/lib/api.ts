@@ -2,14 +2,19 @@ export const API_BASE = import.meta?.env?.VITE_API_BASE?.replace(/\/+$/, "") || 
 
 export async function apiFetch<T = unknown>(path: string, init?: RequestInit): Promise<T> {
   const url = `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
-  const res = await fetch(url, {
-    // do not set mode: 'no-cors'
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers || {})
-    }
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      // do not set mode: 'no-cors'
+      ...init,
+      headers: {
+        "Content-Type": "application/json",
+        ...(init?.headers || {})
+      }
+    });
+  } catch {
+    throw new Error("Network request failed");
+  }
 
   let data: unknown = null;
   try {

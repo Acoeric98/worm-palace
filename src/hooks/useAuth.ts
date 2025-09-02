@@ -1,6 +1,7 @@
 import { useRef, useCallback } from 'react';
 import { registerUser as apiRegisterUser, loginUser as apiLoginUser, saveUser as apiSaveUser } from '@/services/auth';
 import type { GameState } from '../types/game';
+import { useToast } from './use-toast';
 
 interface RegisterParams {
   username: string;
@@ -9,6 +10,7 @@ interface RegisterParams {
 }
 
 export const useAuth = () => {
+  const { toast } = useToast();
   const credentialsRef = useRef<{ username: string; password: string } | null>(null);
 
   const registerUser = useCallback(async ({ username, password, data }: RegisterParams) => {
@@ -29,8 +31,13 @@ export const useAuth = () => {
       await apiSaveUser({ username: creds.username, password: creds.password, data: state });
     } catch (err) {
       console.error('Failed to save game state', err);
+      toast({
+        title: 'Hiba',
+        description: err instanceof Error ? err.message : 'Nem sikerült csatlakozni a szerverhez.',
+        variant: 'destructive'
+      });
     }
-  }, []);
+  }, [toast]);
 
   const logout = useCallback(() => {
     credentialsRef.current = null;

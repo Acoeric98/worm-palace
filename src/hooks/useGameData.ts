@@ -109,11 +109,6 @@ const useGameDataInternal = () => {
   const { toast } = useToast();
   const { registerUser: authRegisterUser, loginUser: authLoginUser, saveGame, logout: authLogout } = useAuth();
 
-  const training = useTraining(gameState, setGameState, toast);
-  const jobs = useJobs(gameState, setGameState, toast);
-  const inventory = useInventory(gameState, setGameState, toast);
-  const market = useMarket(gameState, setGameState, toast);
-
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
   }, [gameState]);
