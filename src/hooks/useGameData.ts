@@ -107,8 +107,13 @@ export const useGameData = () => {
       setGameState(prev => ({ ...prev, marketListings: data.listings || [] }));
     } catch (err) {
       console.error('Failed to fetch market', err);
+      toast({
+        title: 'Hiba',
+        description: err instanceof Error ? err.message : 'Nem sikerült csatlakozni a szerverhez.',
+        variant: 'destructive'
+      });
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     void fetchMarketListings();
