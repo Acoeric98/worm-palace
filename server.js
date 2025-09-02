@@ -7,6 +7,7 @@ import crypto from 'crypto';
 // ---------- Config ----------
 const USERS_DIR = path.join(process.cwd(), 'users');
 const BACKUP_DIR = path.join(process.cwd(), 'backup');
+const MARKET_FILE = path.join(process.cwd(), 'market.json');
 const MAX_JSON_BYTES = 20 * 1024 * 1024;   // 20 MB
 const DATA_MAX_BYTES = 256 * 1024;         // cap for `data` field on register (tune or disable if needed)
 const DEV_DEBUG_RESPONSES = true;          // include error code/details in JSON responses (good for development)
@@ -56,6 +57,25 @@ const readUser = async (username) => {
 
 const writeUser = async (username, user) => {
   await fsp.writeFile(getUserFile(username), JSON.stringify(user, null, 2), 'utf-8');
+};
+
+const readMarket = async () => {
+  try {
+    const raw = await fsp.readFile(MARKET_FILE, 'utf-8');
+    return JSON.parse(raw);
+  } catch (err) {
+    if (err.code === 'ENOENT') return { listings: [] };
+    if (err instanceof SyntaxError) {
+      const e = new Error('INVALID_MARKET_JSON');
+      e.code = 'INVALID_MARKET_JSON';
+      throw e;
+    }
+    throw err;
+  }
+};
+
+const writeMarket = async (market) => {
+  await fsp.writeFile(MARKET_FILE, JSON.stringify(market, null, 2), 'utf-8');
 };
 
 const hashPassword = (password) =>
@@ -353,6 +373,66 @@ const server = http.createServer(async (req, res) => {
           return sendJson(res, 400, { message: 'Invalid JSON' });
         }
         return sendJson(res, 400, debugPayload({ message: 'Invalid body' }, e));
+      }
+    }
+
+    // Market - get listings
+    if (pathname === '/api/market' && req.method === 'GET') {
+      try {
+        const market = await readMarket();
+        return sendJson(res, 200, market);
+      } catch (e) {
+        console.error('MARKET GET error:', e);
+        return sendJson(res, 500, { message: 'Failed to read market' });
+      }
+    }
+
+    // Market - add listing
+    if (pathname === '/api/market/list' && req.method === 'POST') {
+      try {
+        const body = await readJson(req);
+        const { itemId, price, seller } = body;
+        if (!itemId || typeof price !== 'number' || !seller) {
+          return sendJson(res, 400, { message: 'Invalid listing' });
+        }
+        const market = await readMarket();
+        const listing = { id: Date.now().toString(), itemId, price, seller };
+        market.listings.push(listing);
+        await writeMarket(market);
+        return sendJson(res, 200, { listing });
+      } catch (e) {
+        console.error('MARKET LIST error:', e);
+        if (e.code === 'UNSUPPORTED_MEDIA_TYPE') {
+          return sendJson(res, 415, debugPayload({ message: 'Unsupported media type (expect application/json)' }, e));
+        }
+        if (e.code === 'INVALID_JSON' || e.message === 'INVALID_JSON') {
+          return sendJson(res, 400, { message: 'Invalid JSON' });
+        }
+        return sendJson(res, 500, { message: 'Failed to add listing' });
+      }
+    }
+
+    // Market - remove listing
+    if (pathname === '/api/market/remove' && req.method === 'POST') {
+      try {
+        const body = await readJson(req);
+        const { listingId } = body;
+        if (!listingId) {
+          return sendJson(res, 400, { message: 'Missing listingId' });
+        }
+        const market = await readMarket();
+        market.listings = market.listings.filter((l) => l.id !== listingId);
+        await writeMarket(market);
+        return sendJson(res, 200, { status: 'ok' });
+      } catch (e) {
+        console.error('MARKET REMOVE error:', e);
+        if (e.code === 'UNSUPPORTED_MEDIA_TYPE') {
+          return sendJson(res, 415, debugPayload({ message: 'Unsupported media type (expect application/json)' }, e));
+        }
+        if (e.code === 'INVALID_JSON' || e.message === 'INVALID_JSON') {
+          return sendJson(res, 400, { message: 'Invalid JSON' });
+        }
+        return sendJson(res, 500, { message: 'Failed to remove listing' });
       }
     }
 
