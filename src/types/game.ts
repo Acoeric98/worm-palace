@@ -215,6 +215,8 @@ export interface GameState {
     wins: number;
     losses: number;
   }>;
+  // Index signature for API compatibility
+  [key: string]: unknown;
 }
 
 export const DAILY_JOB_LIMIT = 5;
