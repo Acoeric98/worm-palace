@@ -134,6 +134,9 @@ sudo ln -sf /etc/nginx/sites-available/${SITE_NAME} /etc/nginx/sites-enabled/${S
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t
 sudo systemctl restart nginx
+sudo systemctl status nginx
+sudo systemctl restart wormapi
+sudo systemctl status wormapi
 if command -v ufw >/dev/null 2>&1; then sudo ufw allow ${PORT}/tcp || true; fi
 
 IP="$(hostname -I | awk '{print $1}')"
