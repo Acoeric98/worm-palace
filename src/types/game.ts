@@ -146,6 +146,13 @@ export interface InventoryItem {
   acquiredAt: number;
 }
 
+export interface MarketListing {
+  id: string;
+  itemId: string;
+  seller: string;
+  price: number;
+}
+
 export interface TourResult {
   id: string;
   name: string;
@@ -207,6 +214,7 @@ export interface GameState {
   dailyJobsCompleted: number;
   inventory: InventoryItem[];
   shopItems: Item[];
+  marketListings: MarketListing[];
   tourResults: TourResult[];
   battles: Battle[];
   abilities: Ability[];

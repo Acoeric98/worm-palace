@@ -13,6 +13,8 @@ interface InventoryProps {
   onUseItem: (itemId: string) => void;
   onEquipItem: (itemId: string) => void;
   onUnequipItem: (slot: keyof Worm['equipment']) => void;
+  onListItem: (itemId: string, price: number) => void;
+  onSellToShop: (itemId: string) => void;
   getTotalStats: (worm: Worm) => {
     strength: number;
     dexterity: number; 
@@ -26,11 +28,13 @@ interface InventoryProps {
 export const Inventory = ({ 
   inventory, 
   items, 
-  worm, 
-  onUseItem, 
-  onEquipItem, 
+  worm,
+  onUseItem,
+  onEquipItem,
   onUnequipItem,
-  getTotalStats 
+  onListItem,
+  onSellToShop,
+  getTotalStats
 }: InventoryProps) => {
   const getItemDetails = (itemId: string) => 
     items.find(item => item.id === itemId);
@@ -215,13 +219,32 @@ export const Inventory = ({
                                     )}
                                   </div>
                                 </div>
-                                <Button
-                                  size="sm"
-                                  onClick={() => onEquipItem(item.id)}
-                                  disabled={isEquipped || (item.level && worm.level < item.level)}
-                                >
-                                  {isEquipped ? 'Felöltve' : 'Felöltés'}
-                                </Button>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={() => onEquipItem(item.id)}
+                                    disabled={isEquipped || (item.level && worm.level < item.level)}
+                                  >
+                                    {isEquipped ? 'Felöltve' : 'Felöltés'}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    onClick={() => {
+                                      const price = Number(prompt('Eladási ár?'));
+                                      if (!isNaN(price) && price > 0) onListItem(item.id, price);
+                                    }}
+                                  >
+                                    Piac
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => onSellToShop(item.id)}
+                                  >
+                                    Eladás
+                                  </Button>
+                                </div>
                               </div>
                             );
                           })}
@@ -292,14 +315,33 @@ export const Inventory = ({
                             </div>
                           )}
                           
-                          <Button
-                            size="sm"
-                            onClick={() => onUseItem(item.id)}
-                            className="w-full"
-                            disabled={invItem.quantity <= 0}
-                          >
-                            Használat
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => onUseItem(item.id)}
+                              disabled={invItem.quantity <= 0}
+                              className="flex-1"
+                            >
+                              Használat
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => {
+                                const price = Number(prompt('Eladási ár?'));
+                                if (!isNaN(price) && price > 0) onListItem(item.id, price);
+                              }}
+                            >
+                              Piac
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => onSellToShop(item.id)}
+                            >
+                              Eladás
+                            </Button>
+                          </div>
                         </CardContent>
                       </Card>
                     );

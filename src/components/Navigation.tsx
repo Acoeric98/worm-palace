@@ -2,8 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 interface NavigationProps {
-  currentPage: 'dashboard' | 'training' | 'jobs' | 'profile' | 'shop' | 'inventory' | 'tours' | 'pvp' | 'pve';
-  onNavigate: (page: 'dashboard' | 'training' | 'jobs' | 'profile' | 'shop' | 'inventory' | 'tours' | 'pvp' | 'pve') => void;
+  currentPage: 'dashboard' | 'training' | 'jobs' | 'profile' | 'shop' | 'inventory' | 'tours' | 'pvp' | 'pve' | 'market';
+  onNavigate: (page: 'dashboard' | 'training' | 'jobs' | 'profile' | 'shop' | 'inventory' | 'tours' | 'pvp' | 'pve' | 'market') => void;
   coins: number;
   onLogout: () => void;
 }
@@ -17,6 +17,7 @@ export const Navigation = ({ currentPage, onNavigate, coins, onLogout }: Navigat
     { id: 'pvp', label: 'PvP', icon: '⚔️' },
     { id: 'pve', label: 'PvE', icon: '🐉' },
     { id: 'shop', label: 'Bolt', icon: '🏪' },
+    { id: 'market', label: 'Piac', icon: '🛒' },
     { id: 'inventory', label: 'Táska', icon: '🎒' },
     { id: 'profile', label: 'Profil', icon: '👤' }
   ] as const;

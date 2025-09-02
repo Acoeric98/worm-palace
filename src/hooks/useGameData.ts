@@ -73,6 +73,7 @@ const defaultGameState: GameState = {
   dailyJobsCompleted: 0,
   inventory: [],
   shopItems: defaultShopItems,
+  marketListings: [],
   tourResults: defaultTours,
   battles: [],
   abilities: defaultAbilities,
@@ -685,6 +686,104 @@ export const useGameData = () => {
     });
   };
 
+  const sellItemToShop = (itemId: string) => {
+    const inventoryItem = gameState.inventory.find(inv => inv.itemId === itemId);
+    const item = gameState.shopItems.find(i => i.id === itemId);
+    if (!inventoryItem || !item || !gameState.worm) return;
+
+    const ranges: Record<Item['rarity'], [number, number]> = {
+      common: [30, 50],
+      rare: [50, 75],
+      epic: [75, 90],
+      legendary: [90, 100],
+    };
+    const [min, max] = ranges[item.rarity];
+    const price = Math.floor(Math.random() * (max - min + 1)) + min;
+
+    const updatedInventory = inventoryItem.quantity === 1
+      ? gameState.inventory.filter(inv => inv.itemId !== itemId)
+      : gameState.inventory.map(inv =>
+          inv.itemId === itemId ? { ...inv, quantity: inv.quantity - 1 } : inv
+        );
+
+    const updatedWorm: Worm = {
+      ...gameState.worm,
+      coins: gameState.worm.coins + price,
+      lastUpdated: Date.now(),
+    };
+
+    setGameState(prev => ({
+      ...prev,
+      worm: updatedWorm,
+      inventory: updatedInventory,
+    }));
+
+    toast({ title: 'Eladva!', description: `${item.nameHu} eladva ${price} érméért.` });
+  };
+
+  const listItemForSale = (itemId: string, price: number) => {
+    const inventoryItem = gameState.inventory.find(inv => inv.itemId === itemId);
+    const item = gameState.shopItems.find(i => i.id === itemId);
+    if (!inventoryItem || !item || !gameState.user) return;
+
+    const updatedInventory = inventoryItem.quantity === 1
+      ? gameState.inventory.filter(inv => inv.itemId !== itemId)
+      : gameState.inventory.map(inv =>
+          inv.itemId === itemId ? { ...inv, quantity: inv.quantity - 1 } : inv
+        );
+
+    const listing = {
+      id: Date.now().toString(),
+      itemId,
+      seller: gameState.user.username,
+      price,
+    };
+
+    setGameState(prev => ({
+      ...prev,
+      inventory: updatedInventory,
+      marketListings: [...prev.marketListings, listing],
+    }));
+
+    toast({ title: 'Piacra téve!', description: `${item.nameHu} listázva ${price} érméért.` });
+  };
+
+  const buyListing = (listingId: string) => {
+    const listing = gameState.marketListings.find(l => l.id === listingId);
+    if (!listing || !gameState.worm) return;
+    if (listing.price > gameState.worm.coins) {
+      toast({ title: 'Nincs elég érme!', description: 'Nem tudod megvenni ezt a tárgyat.', variant: 'destructive' });
+      return;
+    }
+
+    const item = gameState.shopItems.find(i => i.id === listing.itemId);
+    if (!item) return;
+
+    const existingItem = gameState.inventory.find(inv => inv.itemId === listing.itemId);
+    const updatedInventory = existingItem
+      ? gameState.inventory.map(inv =>
+          inv.itemId === listing.itemId ? { ...inv, quantity: inv.quantity + 1 } : inv
+        )
+      : [...gameState.inventory, { itemId: listing.itemId, quantity: 1, acquiredAt: Date.now() }];
+
+    const updatedWorm: Worm = {
+      ...gameState.worm,
+      coins: gameState.worm.coins - listing.price,
+      lastUpdated: Date.now(),
+    };
+
+    const updatedListings = gameState.marketListings.filter(l => l.id !== listingId);
+
+    setGameState(prev => ({
+      ...prev,
+      worm: updatedWorm,
+      inventory: updatedInventory,
+      marketListings: updatedListings,
+    }));
+
+    toast({ title: 'Vásárlás sikeres!', description: `${item.nameHu} megvásárolva.` });
+  };
+
   // Get total stats including equipment bonuses
   const getTotalStats = (worm: Worm) => {
     const totalStats = {
@@ -1116,6 +1215,9 @@ export const useGameData = () => {
     useItem,
     equipItem,
     unequipItem,
+    sellItemToShop,
+    listItemForSale,
+    buyListing,
     getTotalStats,
     isTourAvailable,
     getTourCooldown,
