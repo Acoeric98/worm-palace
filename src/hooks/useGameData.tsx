@@ -92,7 +92,7 @@ const defaultGameState: GameState = {
   leaderboard: []
 };
 
-const useGameInternal = () => {
+const useGameDataInternal = () => {
   const [gameState, setGameState] = useState<GameState>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
@@ -451,19 +451,19 @@ const useGameInternal = () => {
     ...market
   };
 };
-type GameContextValue = ReturnType<typeof useGameInternal>;
+type GameContextValue = ReturnType<typeof useGameDataInternal>;
 
 const GameContext = createContext<GameContextValue | null>(null);
 
 export const GameProvider = ({ children }: { children: ReactNode }) => {
-  const value = useGameInternal();
+  const value = useGameDataInternal();
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 };
 
-export const useGame = () => {
+export const useGameData = () => {
   const context = useContext(GameContext);
   if (!context) {
-    throw new Error('useGame must be used within a GameProvider');
+    throw new Error('useGameData must be used within a GameProvider');
   }
   return context;
 };

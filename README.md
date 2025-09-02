@@ -131,7 +131,7 @@ Illetve csatolva van a nginx config file "wormapp" névem, és a hozzá tartozó
 │   ├── hooks
 │   │   ├── use-mobile.tsx
 │   │   ├── use-toast.ts
-│   │   ├── useGame.tsx    # GameProvider and aggregator hook
+│   │   ├── useGameData.ts    # GameProvider and aggregator hook
 │   │   ├── useInventory.ts
 │   │   ├── useJobs.ts
 │   │   ├── useMarket.ts

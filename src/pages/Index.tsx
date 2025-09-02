@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useGame } from '../hooks/useGame';
+import { useGameData } from '../hooks/useGameData';
 import { Navigation } from '../components/Navigation';
 import { Dashboard } from '../components/Dashboard';
 import { TrainingRoom } from '../components/TrainingRoom';
@@ -45,7 +45,7 @@ const Index = () => {
     startAdventure,
     isLoggedIn,
     logout
-  } = useGame();
+  } = useGameData();
 
   // If no user/worm exists, show auth forms
   if (!isLoggedIn) {
