@@ -49,8 +49,8 @@ export const SetupForm = ({ onRegister, onSwitchToLogin }: SetupFormProps) => {
     setLoading(true);
     try {
       await onRegister(username.trim(), password, wormName.trim(), selectedClass);
-    } catch (err: any) {
-      setError(err?.message || 'Registration failed');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
       setLoading(false);
     }

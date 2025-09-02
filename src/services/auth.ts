@@ -3,7 +3,7 @@ import { apiFetch } from "@/lib/api";
 export interface RegisterBody {
   username: string;
   password: string;
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
 export interface RegisterResponse {
@@ -22,7 +22,7 @@ export interface LoginBody {
   password: string;
 }
 
-export async function loginUser<T = any>(body: LoginBody): Promise<T> {
+export async function loginUser<T = unknown>(body: LoginBody): Promise<T> {
   return apiFetch<T>("/api/login", {
     method: "POST",
     body: JSON.stringify(body)

@@ -133,7 +133,7 @@ export const useGameData = () => {
     }, 60000); // Check every minute
 
     return () => clearInterval(interval);
-  }, [gameState.worm?.id]);
+  }, [gameState.worm]);
 
   const registerUser = async (
     username: string,

@@ -11,7 +11,7 @@ export async function apiFetch<T = unknown>(path: string, init?: RequestInit): P
     }
   });
 
-  let data: any = null;
+  let data: unknown = null;
   try {
     // server returns JSON on both success and error
     data = await res.json();
@@ -20,7 +20,8 @@ export async function apiFetch<T = unknown>(path: string, init?: RequestInit): P
   }
 
   if (!res.ok) {
-    const reason = (data && (data.error || data.message)) || res.statusText || "Request failed";
+    const errorData = data as { error?: string; message?: string } | null;
+    const reason = errorData?.error || errorData?.message || res.statusText || "Request failed";
     throw new Error(reason);
   }
   return data as T;
