@@ -3,7 +3,7 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Package, Zap, Shield, Shirt, Crown, Sword, Star } from 'lucide-react';
+import { Package, Zap, Shield, Shirt, Crown, Sword, Hand } from 'lucide-react';
 import { InventoryItem, Item, Worm } from '../types/game';
 
 interface InventoryProps {
@@ -46,6 +46,20 @@ export const Inventory = ({
     .map(inv => ({ ...inv, item: getItemDetails(inv.itemId) }))
     .filter(inv => inv.item?.type === 'equipment');
 
+  const equipmentGroups: Record<keyof Worm['equipment'], typeof equipmentItems> = {
+    helmet: [],
+    armor: [],
+    weapon: [],
+    accessory: [],
+  };
+
+  equipmentItems.forEach(inv => {
+    const type = inv.item?.subType as keyof Worm['equipment'] | undefined;
+    if (type) {
+      equipmentGroups[type].push(inv);
+    }
+  });
+
   const totalStats = getTotalStats(worm);
 
   const getSlotIcon = (slot: keyof Worm['equipment']): JSX.Element => {
@@ -57,7 +71,7 @@ export const Inventory = ({
       case 'weapon':
         return <Sword className="h-4 w-4" />;
       case 'accessory':
-        return <Star className="h-4 w-4" />;
+        return <Hand className="h-4 w-4" />;
     }
     const _exhaustiveCheck: never = slot;
     return _exhaustiveCheck;
@@ -72,7 +86,22 @@ export const Inventory = ({
       case 'weapon':
         return 'Fegyver';
       case 'accessory':
-        return 'Kiegészítő';
+        return 'Kesztyű';
+    }
+    const _exhaustiveCheck: never = slot;
+    return _exhaustiveCheck;
+  };
+
+  const getSubTypeLabel = (slot: keyof Worm['equipment']): string => {
+    switch (slot) {
+      case 'helmet':
+        return 'Sapkák';
+      case 'armor':
+        return 'Mellvértek';
+      case 'weapon':
+        return 'Fegyverek';
+      case 'accessory':
+        return 'Kesztyűk';
     }
     const _exhaustiveCheck: never = slot;
     return _exhaustiveCheck;
@@ -155,41 +184,47 @@ export const Inventory = ({
                     Nincs felszerelés a táskádban
                   </p>
                 ) : (
-                  <div className="space-y-3">
-                    {equipmentItems.map((invItem) => {
-                      const item = invItem.item!;
-                      const isEquipped = Object.values(worm.equipment).includes(item.id);
+                  <div className="space-y-6">
+                    {(Object.keys(equipmentGroups) as (keyof Worm['equipment'])[]).map(group => {
+                      const items = equipmentGroups[group];
+                      if (items.length === 0) return null;
                       return (
-                        <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <span className="text-xl">{item.icon}</span>
-                            <div>
-                              <p className="font-medium">{item.nameHu}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {item.subType ? getSlotName(item.subType as keyof Worm['equipment']) : ''}
-                              </p>
-                              {item.statBonus && (
-                                <div className="text-xs text-blue-500">
-                                  {Object.entries(item.statBonus).map(([stat, value]) => (
-                                    <span key={stat} className="mr-2">
-                                      +{value} {stat === 'strength' ? 'Erő' : 
-                                        stat === 'dexterity' ? 'Ügy.' : 
-                                        stat === 'endurance' ? 'Kit.' : 
-                                        stat === 'stamina' ? 'Áll.' : 
-                                        stat === 'intelligence' ? 'Int.' : 'Kar.'}
-                                    </span>
-                                  ))}
+                        <div key={group} className="space-y-3">
+                          <h4 className="font-semibold">{getSubTypeLabel(group)}</h4>
+                          {items.map((invItem) => {
+                            const item = invItem.item!;
+                            const isEquipped = Object.values(worm.equipment).includes(item.id);
+                            return (
+                              <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                <div className="flex items-center gap-3">
+                                  <span className="text-xl">{item.icon}</span>
+                                  <div>
+                                    <p className="font-medium">{item.nameHu}</p>
+                                    {item.statBonus && (
+                                      <div className="text-xs text-blue-500">
+                                        {Object.entries(item.statBonus).map(([stat, value]) => (
+                                          <span key={stat} className="mr-2">
+                                            +{value} {stat === 'strength' ? 'Erő' :
+                                              stat === 'dexterity' ? 'Ügy.' :
+                                              stat === 'endurance' ? 'Kit.' :
+                                              stat === 'stamina' ? 'Áll.' :
+                                              stat === 'intelligence' ? 'Int.' : 'Kar.'}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                              )}
-                            </div>
-                          </div>
-                          <Button
-                            size="sm"
-                            onClick={() => onEquipItem(item.id)}
-                            disabled={isEquipped || (item.level && worm.level < item.level)}
-                          >
-                            {isEquipped ? 'Felöltve' : 'Felöltés'}
-                          </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() => onEquipItem(item.id)}
+                                  disabled={isEquipped || (item.level && worm.level < item.level)}
+                                >
+                                  {isEquipped ? 'Felöltve' : 'Felöltés'}
+                                </Button>
+                              </div>
+                            );
+                          })}
                         </div>
                       );
                     })}

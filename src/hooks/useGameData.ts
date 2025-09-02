@@ -47,6 +47,7 @@ const createInitialWorm = (name: string, playerClass: PlayerClass): Worm => {
     cooldowns: {},
     dailyCounters: {},
     tourCooldowns: {},
+    currentActivity: undefined,
     createdAt: Date.now(),
     lastUpdated: Date.now()
   };
@@ -220,6 +221,16 @@ export const useGameData = () => {
 
     const worm = gameState.worm;
 
+    // Prevent action if another activity is running
+    if (worm.currentActivity && Date.now() < worm.currentActivity.endsAt) {
+      toast({
+        title: "Már folyamatban van egy tevékenység!",
+        description: "Várd meg, míg az előző befejeződik.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Check energy
     if (worm.energy < training.energyCost) {
       toast({
@@ -276,6 +287,10 @@ export const useGameData = () => {
         ...worm.dailyCounters,
         [trainingId]: { date: today, count: todayCount + 1 }
       },
+      currentActivity: {
+        type: 'training',
+        endsAt: Date.now() + training.cooldownSeconds * 1000
+      },
       lastUpdated: Date.now()
     };
 
@@ -311,6 +326,16 @@ export const useGameData = () => {
     if (!job || !gameState.worm) return;
 
     const worm = gameState.worm;
+
+    // Prevent action if another activity is running
+    if (worm.currentActivity && Date.now() < worm.currentActivity.endsAt) {
+      toast({
+        title: "Már folyamatban van egy tevékenység!",
+        description: "Várd meg, míg az előző befejeződik.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     // Check daily job limit
     const today = new Date().toDateString();
@@ -377,6 +402,10 @@ export const useGameData = () => {
     const updatedWorm: Worm = {
       ...worm,
       energy: worm.energy - job.energyCost,
+      currentActivity: {
+        type: 'job',
+        endsAt: Date.now() + job.durationMinutes * 60 * 1000
+      },
       lastUpdated: Date.now()
     };
 
@@ -420,6 +449,7 @@ export const useGameData = () => {
       ...worm,
       coins: worm.coins + job.rewardCoins,
       xp: worm.xp + job.rewardXp,
+      currentActivity: undefined,
       lastUpdated: Date.now()
     };
 
@@ -704,6 +734,15 @@ export const useGameData = () => {
     const tour = gameState.tourResults.find(t => t.id === tourId);
     if (!tour) return;
 
+    if (gameState.worm.currentActivity && Date.now() < gameState.worm.currentActivity.endsAt) {
+      toast({
+        title: "Már folyamatban van egy tevékenység!",
+        description: "Várd meg, míg az előző befejeződik.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Check requirements
     if (gameState.worm.level < tour.minLevel) {
       toast({
@@ -741,6 +780,10 @@ export const useGameData = () => {
         tourCooldowns: {
           ...prev.worm.tourCooldowns,
           [tourId]: Date.now() + (tour.duration * 60 * 1000) // Convert minutes to milliseconds
+        },
+        currentActivity: {
+          type: 'tour',
+          endsAt: Date.now() + tour.duration * 60 * 1000
         }
       };
 
@@ -784,11 +827,20 @@ export const useGameData = () => {
   const startDungeon = (difficulty: 'easy' | 'medium' | 'hard' | 'elite'): void => {
     if (!gameState.worm) return;
 
+    if (gameState.worm.currentActivity && Date.now() < gameState.worm.currentActivity.endsAt) {
+      toast({
+        title: "Már folyamatban van egy tevékenység!",
+        description: "Várd meg, míg az előző befejeződik.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const dungeonData = {
-      easy: { energyCost: 15, minLevel: 1, tier: 'low' as const, xpReward: 20 },
-      medium: { energyCost: 25, minLevel: 5, tier: 'mid-bottom' as const, xpReward: 40 },
-      hard: { energyCost: 35, minLevel: 10, tier: 'mid-top' as const, xpReward: 60 },
-      elite: { energyCost: 50, minLevel: 15, tier: 'high-bottom' as const, xpReward: 100 }
+      easy: { energyCost: 15, minLevel: 1, tier: 'low' as const, xpReward: 20, durationMinutes: 5 },
+      medium: { energyCost: 25, minLevel: 5, tier: 'mid-bottom' as const, xpReward: 40, durationMinutes: 10 },
+      hard: { energyCost: 35, minLevel: 10, tier: 'mid-top' as const, xpReward: 60, durationMinutes: 15 },
+      elite: { energyCost: 50, minLevel: 15, tier: 'high-bottom' as const, xpReward: 100, durationMinutes: 20 }
     };
 
     const dungeon = dungeonData[difficulty];
@@ -835,7 +887,11 @@ export const useGameData = () => {
         ...prev.worm,
         energy: prev.worm.energy - dungeon.energyCost,
         xp: newXp,
-        level: newLevel
+        level: newLevel,
+        currentActivity: {
+          type: 'dungeon',
+          endsAt: Date.now() + dungeon.durationMinutes * 60 * 1000
+        }
       };
 
       const updatedInventory = rewardItem 
@@ -864,6 +920,15 @@ export const useGameData = () => {
 
   const startRaid = (): void => {
     if (!gameState.worm) return;
+
+    if (gameState.worm.currentActivity && Date.now() < gameState.worm.currentActivity.endsAt) {
+      toast({
+        title: "Már folyamatban van egy tevékenység!",
+        description: "Várd meg, míg az előző befejeződik.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     // Check requirements
     if (gameState.worm.level < 12) {
@@ -902,11 +967,17 @@ export const useGameData = () => {
         rewards.push(generateRandomEquipment('high-bottom', randomEquipmentSubType()));
       }
 
+      const raidDurationMinutes = 30;
+
       const updatedWorm = {
         ...prev.worm,
         energy: prev.worm.energy - 40,
         xp: newXp,
-        level: newLevel
+        level: newLevel,
+        currentActivity: {
+          type: 'raid',
+          endsAt: Date.now() + raidDurationMinutes * 60 * 1000
+        }
       };
 
       const newInventoryItems = rewards.map(item => ({ 
@@ -934,6 +1005,15 @@ export const useGameData = () => {
 
   const startAdventure = (): void => {
     if (!gameState.worm) return;
+
+    if (gameState.worm.currentActivity && Date.now() < gameState.worm.currentActivity.endsAt) {
+      toast({
+        title: "Már folyamatban van egy tevékenység!",
+        description: "Várd meg, míg az előző befejeződik.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     // Check requirements
     if (gameState.worm.level < 8) {
@@ -969,11 +1049,17 @@ export const useGameData = () => {
         rewardItem = generateRandomEquipment('mid-top', randomEquipmentSubType());
       }
 
+      const adventureDurationMinutes = 20;
+
       const updatedWorm = {
         ...prev.worm,
         energy: prev.worm.energy - 30,
         xp: newXp,
-        level: newLevel
+        level: newLevel,
+        currentActivity: {
+          type: 'adventure',
+          endsAt: Date.now() + adventureDurationMinutes * 60 * 1000
+        }
       };
 
       const updatedInventory = rewardItem 
