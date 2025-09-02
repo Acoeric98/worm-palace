@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PlayerClass } from '../types/game';
 import { ClassSelector } from './ClassSelector';
+import { isValidUsername } from '@/lib/validation';
 
 interface SetupFormProps {
   onRegister: (
@@ -34,6 +35,10 @@ export const SetupForm = ({ onRegister, onSwitchToLogin }: SetupFormProps) => {
     }
     if (password.trim().length < 6) {
       setError('Jelszó túl rövid (min 6).');
+      return;
+    }
+    if (!isValidUsername(username.trim())) {
+      setError('Felhasználónév csak A-Z, a-z, 0-9 és _ karaktereket tartalmazhat.');
       return;
     }
     if (!wormName.trim()) {

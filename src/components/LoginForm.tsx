@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { isValidUsername } from '@/lib/validation';
 
 interface LoginFormProps {
   onLogin: (username: string, password: string) => void;
@@ -12,10 +13,17 @@ interface LoginFormProps {
 export const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin(username, password);
+    setError(null);
+    const trimmed = username.trim();
+    if (!isValidUsername(trimmed)) {
+      setError('Felhasználónév csak A-Z, a-z, 0-9 és _ karaktereket tartalmazhat.');
+      return;
+    }
+    onLogin(trimmed, password);
   };
 
   return (
@@ -29,6 +37,9 @@ export const LoginForm = ({ onLogin, onSwitchToRegister }: LoginFormProps) => {
         </CardHeader>
 
         <CardContent className="space-y-4">
+          {error && (
+            <p role="alert" className="text-red-600 text-sm text-center">{error}</p>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="username">Felhasználónév</Label>
