@@ -50,7 +50,7 @@ const collectBody = (req) =>
   });
 
 
-async function readJson(req, maxBytes = 1_000_000) {
+async function readJson(req, maxBytes = 10_000_000) {
   return new Promise((resolve, reject) => {
     const ct = req.headers['content-type'] || '';
     if (!ct.includes('application/json')) {
