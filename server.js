@@ -1,4 +1,4 @@
-// server.js (hardened)
+// server.js (hardened + debug)
 import http from 'http';
 import fsp from 'fs/promises';
 import path from 'path';
@@ -8,10 +8,29 @@ import crypto from 'crypto';
 const USERS_DIR = path.join(process.cwd(), 'users');
 const BACKUP_DIR = path.join(process.cwd(), 'backup');
 const MAX_JSON_BYTES = 20 * 1024 * 1024;   // 20 MB
-const DATA_MAX_BYTES = 256 * 1024;         // cap for `data` field on register
+const DATA_MAX_BYTES = 256 * 1024;         // cap for `data` field on register (tune or disable if needed)
+const DEV_DEBUG_RESPONSES = true;          // include error code/details in JSON responses (good for development)
 
 // ---------- Utils ----------
-const ensureDir = async (dir) => fsp.mkdir(dir, { recursive: true });
+const ensureDir = async (dir) => {
+  try {
+    const st = await fsp.stat(dir).catch(() => null);
+    if (!st) {
+      await fsp.mkdir(dir, { recursive: true });
+      return;
+    }
+    if (!st.isDirectory()) {
+      const e = new Error('NOT_A_DIRECTORY');
+      e.code = 'NOT_A_DIRECTORY';
+      e.path = dir;
+      throw e;
+    }
+  } catch (err) {
+    console.error('ensureDir error for', dir, err && err.code, err && err.message);
+    throw err;
+  }
+};
+
 const getUserFile = (username) => path.join(USERS_DIR, `${username}.json`);
 
 const readUser = async (username) => {
@@ -23,6 +42,11 @@ const readUser = async (username) => {
     if (err instanceof SyntaxError) {
       const e = new Error('INVALID_JSON');
       e.code = 'INVALID_JSON';
+      throw e;
+    }
+    if (['EISDIR', 'EACCES', 'EPERM', 'ENOTDIR'].includes(err.code)) {
+      const e = new Error('USER_DATA_INACCESSIBLE');
+      e.code = 'USER_DATA_INACCESSIBLE';
       throw e;
     }
     throw err;
@@ -44,8 +68,8 @@ const sendJson = (res, status, payload) => {
 
 const readJson = (req, maxBytes = MAX_JSON_BYTES) =>
   new Promise((resolve, reject) => {
-    const ct = req.headers['content-type'] || '';
-    if (!ct.toLowerCase().includes('application/json')) {
+    const ct = (req.headers['content-type'] || '').toLowerCase();
+    if (!ct.includes('application/json')) {
       const e = new Error('UNSUPPORTED_MEDIA_TYPE');
       e.code = 'UNSUPPORTED_MEDIA_TYPE';
       return reject(e);
@@ -81,9 +105,26 @@ const readJson = (req, maxBytes = MAX_JSON_BYTES) =>
     req.on('error', (e) => reject(e));
   });
 
+const safePathname = (urlStr) => {
+  const u = urlStr || '/';
+  const q = u.indexOf('?');
+  return q === -1 ? u : u.slice(0, q);
+};
+
+const debugPayload = (base, e) => {
+  if (!DEV_DEBUG_RESPONSES) return base;
+  const out = { ...base };
+  if (e?.code) out.code = e.code;
+  if (e?.message) out.detail = e.message;
+  return out;
+};
+
 // ---------- Server ----------
 const server = http.createServer(async (req, res) => {
   try {
+    // Basic request log (dev)
+    console.log('[REQ]', req.method, req.url);
+
     // CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
@@ -95,13 +136,11 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    // Ensure storage exists (logically once per request; cheap enough)
     await ensureDir(USERS_DIR);
     await ensureDir(BACKUP_DIR);
 
-    // Safe pathname parse (no throwing)
-    const urlStr = req.url || '/';
-    const qpos = urlStr.indexOf('?');
-    const pathname = qpos === -1 ? urlStr : urlStr.slice(0, qpos);
+    const pathname = safePathname(req.url);
 
     // Health
     if (pathname === '/api/health' && req.method === 'GET') {
@@ -111,11 +150,15 @@ const server = http.createServer(async (req, res) => {
     // Register
     if (pathname === '/api/register' && req.method === 'POST') {
       try {
+        console.log('[REGISTER] start ct=', req.headers['content-type']);
         const body = await readJson(req);
+        console.log('[REGISTER] body keys:', Object.keys(body || {}));
 
         const username = ((body.username ?? body.user) ?? '').toString().trim();
         const password = ((body.password ?? body.pass) ?? '').toString().trim();
         const data = body.data ?? {};
+
+        console.log('[REGISTER] parsed username=', username, 'pwLen=', password.length, 'dataType=', typeof data);
 
         if (!username || !password) {
           return sendJson(res, 400, { message: 'Missing username or password' });
@@ -130,22 +173,30 @@ const server = http.createServer(async (req, res) => {
           return sendJson(res, 400, { message: 'Invalid data object' });
         }
 
-        // Optionally cap data size
+        // Optional cap (tune/disable as needed)
+        let dataSize = 0;
         try {
-          const dataSize = Buffer.byteLength(JSON.stringify(data), 'utf8');
-          if (dataSize > DATA_MAX_BYTES) {
-            return sendJson(res, 413, { message: 'Data too large' });
-          }
-        } catch {
+          const s = JSON.stringify(data);
+          dataSize = Buffer.byteLength(s, 'utf8');
+        } catch (jerr) {
+          console.error('[REGISTER] data stringify error:', jerr);
           return sendJson(res, 400, { message: 'Invalid data' });
+        }
+        console.log('[REGISTER] dataSize=', dataSize);
+        if (dataSize > DATA_MAX_BYTES) {
+          return sendJson(res, 413, { message: 'Data too large' });
         }
 
         let existing = null;
         try {
           existing = await readUser(username);
         } catch (err) {
+          console.error('[REGISTER] readUser error:', err);
           if (err.code === 'INVALID_JSON' || err.message === 'INVALID_JSON') {
             return sendJson(res, 409, { message: 'Corrupted existing user data' });
+          }
+          if (err.code === 'USER_DATA_INACCESSIBLE') {
+            return sendJson(res, 500, debugPayload({ message: 'User storage not accessible' }, err));
           }
           throw err;
         }
@@ -158,28 +209,43 @@ const server = http.createServer(async (req, res) => {
           data,
           createdAt: new Date().toISOString(),
         };
+        const filePath = getUserFile(username);
+        console.log('[REGISTER] writing file:', filePath);
 
-        await writeUser(username, record);
+        try {
+          await writeUser(username, record);
+        } catch (werr) {
+          console.error('[REGISTER] writeUser error:', werr);
+          if (['EACCES','EPERM','EISDIR','ENOTDIR'].includes(werr.code)) {
+            return sendJson(res, 500, debugPayload({ message: 'Failed to persist user' }, werr));
+          }
+          throw werr;
+        }
+
+        console.log('[REGISTER] done OK');
         return sendJson(res, 201, { status: 'ok' });
       } catch (e) {
+        console.error('REGISTER CATCH:', e && e.stack || e);
         if (e.code === 'UNSUPPORTED_MEDIA_TYPE') {
-          return sendJson(res, 415, { message: 'Unsupported media type (expect application/json)' });
+          return sendJson(res, 415, debugPayload({ message: 'Unsupported media type (expect application/json)' }, e));
         }
         if (e.code === 'PAYLOAD_TOO_LARGE') {
-          return sendJson(res, 413, { message: 'Payload too large' });
+          return sendJson(res, 413, debugPayload({ message: 'Payload too large' }, e));
         }
         if (e.code === 'INVALID_JSON' || e.message === 'INVALID_JSON') {
           return sendJson(res, 400, { message: 'Invalid JSON' });
         }
-        console.error('REGISTER error:', e);
-        return sendJson(res, 400, { message: 'Invalid body' });
+        // Unknown error → 400 with details (dev) or generic
+        return sendJson(res, 400, debugPayload({ message: 'Invalid body' }, e));
       }
     }
 
     // Login
     if (pathname === '/api/login' && req.method === 'POST') {
       try {
+        console.log('[LOGIN] start ct=', req.headers['content-type']);
         const { username = '', password = '' } = await readJson(req);
+
         if (!username || !password) {
           return sendJson(res, 400, { message: 'Missing username or password' });
         }
@@ -188,8 +254,12 @@ const server = http.createServer(async (req, res) => {
         try {
           user = await readUser(username);
         } catch (err) {
+          console.error('[LOGIN] readUser error:', err);
           if (err.code === 'INVALID_JSON') {
             return sendJson(res, 500, { message: 'Corrupted user data' });
+          }
+          if (err.code === 'USER_DATA_INACCESSIBLE') {
+            return sendJson(res, 500, debugPayload({ message: 'User storage not accessible' }, err));
           }
           throw err;
         }
@@ -203,17 +273,17 @@ const server = http.createServer(async (req, res) => {
 
         return sendJson(res, 200, user.data);
       } catch (e) {
+        console.error('LOGIN CATCH:', e && e.stack || e);
         if (e.code === 'UNSUPPORTED_MEDIA_TYPE') {
-          return sendJson(res, 415, { message: 'Unsupported media type (expect application/json)' });
+          return sendJson(res, 415, debugPayload({ message: 'Unsupported media type (expect application/json)' }, e));
         }
         if (e.code === 'PAYLOAD_TOO_LARGE') {
-          return sendJson(res, 413, { message: 'Payload too large' });
+          return sendJson(res, 413, debugPayload({ message: 'Payload too large' }, e));
         }
         if (e.code === 'INVALID_JSON' || e.message === 'INVALID_JSON') {
           return sendJson(res, 400, { message: 'Invalid JSON' });
         }
-        console.error('LOGIN error:', e);
-        return sendJson(res, 400, { message: 'Invalid body' });
+        return sendJson(res, 400, debugPayload({ message: 'Invalid body' }, e));
       }
     }
 
@@ -254,7 +324,7 @@ const server = http.createServer(async (req, res) => {
     return sendJson(res, 404, { message: 'Not found' });
   } catch (fatal) {
     // Catch any sync throw in the handler to avoid "empty reply"
-    console.error('FATAL handler error:', fatal);
+    console.error('FATAL handler error:', fatal && fatal.stack || fatal);
     return sendJson(res, 500, { message: 'Internal server error' });
   }
 });
