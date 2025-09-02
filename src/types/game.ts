@@ -41,6 +41,12 @@ export interface Worm {
   
   // Tour cooldowns
   tourCooldowns: Record<string, number>;
+
+  // Currently active timed activity
+  currentActivity?: {
+    type: 'training' | 'job' | 'tour' | 'dungeon' | 'raid' | 'adventure' | 'pvp' | 'pve';
+    endsAt: number;
+  };
   
   createdAt: number;
   lastUpdated: number;
