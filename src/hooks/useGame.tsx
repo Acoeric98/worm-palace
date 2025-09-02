@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import {
   GameState,
   Worm,
@@ -92,7 +92,7 @@ const defaultGameState: GameState = {
   leaderboard: []
 };
 
-export const useGame = () => {
+const useGameInternal = () => {
   const [gameState, setGameState] = useState<GameState>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
@@ -451,5 +451,21 @@ export const useGame = () => {
     ...market
   };
 };
+type GameContextValue = ReturnType<typeof useGameInternal>;
 
-export type GameHook = ReturnType<typeof useGame>;
+const GameContext = createContext<GameContextValue | null>(null);
+
+export const GameProvider = ({ children }: { children: ReactNode }) => {
+  const value = useGameInternal();
+  return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
+};
+
+export const useGame = () => {
+  const context = useContext(GameContext);
+  if (!context) {
+    throw new Error('useGame must be used within a GameProvider');
+  }
+  return context;
+};
+
+export type GameHook = GameContextValue;
